@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/considerate/go-search/issues"
   },
-  "homepage": "https://github.com/considerate/go-search#readme"
+  "homepage": "https://github.com/considerate/go-search#readme",
+  "dependencies": {
+    "express": "^4.15.2"
+  }
 }
