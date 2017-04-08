@@ -59,6 +59,11 @@ function parseParameter(tokens) {
         prefix = '...';
         tokens = tokens.shift();
     }
+    if(check(tokens,'rightParen') && identifiers.size > 0) {
+        // No identifiers, list of types
+        const type = '('+identifiers.join(',')+')';
+        return [tokens, [List(), type]];
+    }
     let type;
     [tokens, type] = parseType(tokens);
     return [tokens, [identifiers, prefix+type]];
