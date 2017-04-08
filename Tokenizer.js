@@ -160,66 +160,61 @@ function parseTokens(tokens) {
 
 (function tokenize() {
     let tokens = [];
+    let inMatch = false;
+    const matchers = {
+        identifier: /\w(\w|\d|\.)*(\{\})?/y,
+        star: /\*/y,
+        leftParen: /\(/y,
+        rightParen: /\)/y,
+        leftBrace: /\{/y,
+        rightBrace: /\}/y,
+        leftBracket: /\[/y,
+        rightBracket: /\]/y,
+        comma: /,/y,
+        space: /\s+/y,
+        spread: /\.\.\./y,
+    };
     lineReader.on('line', function (line) {
-        //console.log('Line from file:', line);
-        const matchers = {
-            identifier: /^(\[\]\s*)?\w(\w|\d|\.)*(\{\})?/,
-            star: /^\*/,
-            leftParen: /^\(/,
-            rightParen: /^\)/,
-            comma: /^,/,
-            leftBrace: /^\{/,
-            rightBrace: /^\}/,
-            space: /^\s+/,
-            spread: /^\.\.\./,
-        };
-        const match = line.match(/func .*/);
-
-        if (match) {
-            var signature = match[0].substring(5);
-            console.log(signature);
-            while (signature.length > 0) {
-                var isToken = false;
-                Object.keys(matchers).forEach(function (matcher) {
-                    const match = signature.match(matchers[matcher]);
-                    if (match) {
-                        if (matcher == 'space') {
-                        }
-                        else if (matcher == 'leftBrace') {
-                            //console.log(tokens);
-                            const result = parseTokens(List(tokens));
-                            if(result) {
-                                const ast = result[1];
-                                console.log(ast);
-                            }
-                            tokens = [];
-                            return;
-                        } else {
-                            tokens.push({
-                                text: match[0],
-                                type: matcher,
-                            });
-                        }
-                        isToken = true;
-                        signature = signature.substring(match[0].length);
-                        //console.log(signature);
-                    }
-                });
-                if (!isToken) {
-                    tokens = [];
-                    return;
-                }
-            }
-
-            /*const nameMatch = signature.search(identifier, index);
-             if(nameMatch != -1) {
-             const name = signature.substring(index, index+nameMatch);
-             console.log('Has name', name);
-             }
-
-             console.log(signature);*/
-
+        let index = inMatch ? 0 : line.search(/func .*/);
+        inMatch = (index != -1);
+        if(!inMatch) {
+            tokens = [];
+            return;
         }
-
+        console.log(line);
+        let isToken = true;
+        while(isToken) {
+            isToken = false;
+            Object.keys(matchers).forEach(function (matcher) {
+                const regex = matchers[matcher];
+                // start search at index
+                regex.lastIndex = index;
+                const match = regex.exec(line);
+                if (match !== null) {
+                    if (matcher == 'space') {
+                    } else if (matcher === 'leftBrace') {
+                        const result = parseTokens(List(tokens));
+                        if(result) {
+                            const ast = result[1];
+                            console.log(ast);
+                            console.log();
+                        }
+                        tokens = [];
+                        inMatch = false;
+                        return;
+                    } else {
+                        tokens.push({
+                            text: match[0],
+                            type: matcher,
+                        });
+                    }
+                    isToken = true;
+                    index = regex.lastIndex;
+                }
+            });
+        }
+        inMatch = false;
+        tokens = [];
+        return;
     });
 })();
