@@ -29,14 +29,15 @@ function parseParameters(tokens) {
 }
 
 function parseParameterList(tokens) {
-    let parameters = List([]);
+    let parameter;
     [tokens, parameter] = parseParameter(tokens);
     if(check(tokens,'comma')) {
         tokens = tokens.shift();
+        let parameters;
         [tokens, parameters] = parseParameterList(tokens);
         return [tokens, parameters.unshift(parameter)];
     }
-    return [tokens, parameters.unshift(parameter)];
+    return [tokens, List(parameter)];
 }
 
 function parseIdentifier(tokens) {
@@ -58,6 +59,7 @@ function parseParameter(tokens) {
         prefix = '...';
         tokens = tokens.shift();
     }
+    let type;
     [tokens, type] = parseType(tokens);
     return [tokens, [identifiers, prefix+type]];
 }
@@ -65,22 +67,32 @@ function parseParameter(tokens) {
 function parseType(tokens) {
     if(check(tokens, 'leftParen')) {
         tokens = tokens.shift();
+        let type;
         [tokens, type] = parseType(tokens);
         expect(tokens, 'rightParen');
         tokens = tokens.shift();
         return [tokens, type];
     }
-    else {
-        let prefix = '';
-        if(check(tokens, 'star')) {
-           prefix = '*';
-           tokens = tokens.shift();
-        }
-        expect(tokens, 'identifier');
-        const type = tokens.get(0).text;
+    if(check(tokens, 'star')) {
+        const prefix = '*';
+        let type;
         tokens = tokens.shift();
-        return [tokens, prefix+type];
+        [tokens, type] = parseType(tokens);
+        return [tokens, prefix+type]
     }
+    if(check(tokens, 'leftBracket')) {
+        const prefix = '[]';
+        let type;
+        tokens = tokens.shift();
+        expect(tokens, 'rightBracket');
+        tokens = tokens.shift();
+        [tokens, type] = parseType(tokens);
+        return [tokens, prefix+type]
+    }
+    expect(tokens, 'identifier');
+    const type = tokens.get(0).text;
+    tokens = tokens.shift();
+    return [tokens, type];
 }
 
 function parseIdentifierList(tokens) {
@@ -97,12 +109,12 @@ function parseIdentifierList(tokens) {
 }
 
 function expect(tokens, typeName) {
-    if(tokens.length == 0 || tokens.get(0).type != typeName) {
+    if(tokens.size == 0 || tokens.get(0).type != typeName) {
         throw new Error('Expected '+ typeName);
     }
 }
 function check(tokens, typeName) {
-    if(tokens.length == 0 || tokens.get(0).type != typeName) {
+    if(tokens.size == 0 || tokens.get(0).type != typeName) {
         return false;
     }
     return true;
@@ -121,6 +133,11 @@ function parseResult(tokens) {
 }
 
 function parseTokens(tokens) {
+    expect(tokens, 'identifier');
+    if(tokens.get(0).text != 'func') {
+        throw new Error('Not a function');
+    }
+    tokens = tokens.shift();
     try {
         [tokens2, receiver] = parseParameters(tokens);
         [tokens3, name] = parseIdentifier(tokens2);
@@ -151,7 +168,7 @@ function parseTokens(tokens) {
                     type,
                 }];
             } catch (e) {
-                //console.log(e);
+                console.log(e);
             }
         }
     }
