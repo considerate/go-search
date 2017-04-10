@@ -37,7 +37,7 @@ function parseParameterList(tokens) {
         [tokens, parameters] = parseParameterList(tokens);
         return [tokens, parameters.unshift(parameter)];
     }
-    return [tokens, List(parameter)];
+    return [tokens, List([parameter])];
 }
 
 function parseIdentifier(tokens) {
@@ -61,12 +61,12 @@ function parseParameter(tokens) {
     }
     if(check(tokens,'rightParen') && identifiers.size > 0) {
         // No identifiers, list of types
-        const type = '('+identifiers.join(',')+')';
-        return [tokens, [List(), type]];
+        //const type = '('+identifiers.join(',')+')';
+        return [tokens, identifiers];
     }
     let type;
     [tokens, type] = parseType(tokens);
-    return [tokens, [identifiers, prefix+type]];
+    return [tokens, identifiers.push(prefix+type)];
 }
 
 function parseType(tokens) {
