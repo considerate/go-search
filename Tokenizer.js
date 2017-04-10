@@ -29,14 +29,15 @@ function parseParameters(tokens) {
 }
 
 function parseParameterList(tokens) {
-    let parameters = List([]);
+    let parameter;
     [tokens, parameter] = parseParameter(tokens);
     if(check(tokens,'comma')) {
         tokens = tokens.shift();
+        let parameters;
         [tokens, parameters] = parseParameterList(tokens);
         return [tokens, parameters.unshift(parameter)];
     }
-    return [tokens, parameters.unshift(parameter)];
+    return [tokens, List(parameter)];
 }
 
 function parseIdentifier(tokens) {
@@ -58,6 +59,12 @@ function parseParameter(tokens) {
         prefix = '...';
         tokens = tokens.shift();
     }
+    if(check(tokens,'rightParen') && identifiers.size > 0) {
+        // No identifiers, list of types
+        const type = '('+identifiers.join(',')+')';
+        return [tokens, [List(), type]];
+    }
+    let type;
     [tokens, type] = parseType(tokens);
     return [tokens, [identifiers, prefix+type]];
 }
@@ -65,22 +72,32 @@ function parseParameter(tokens) {
 function parseType(tokens) {
     if(check(tokens, 'leftParen')) {
         tokens = tokens.shift();
+        let type;
         [tokens, type] = parseType(tokens);
         expect(tokens, 'rightParen');
         tokens = tokens.shift();
         return [tokens, type];
     }
-    else {
-        let prefix = '';
-        if(check(tokens, 'star')) {
-           prefix = '*';
-           tokens = tokens.shift();
-        }
-        expect(tokens, 'identifier');
-        const type = tokens.get(0).text;
+    if(check(tokens, 'star')) {
+        const prefix = '*';
+        let type;
         tokens = tokens.shift();
-        return [tokens, prefix+type];
+        [tokens, type] = parseType(tokens);
+        return [tokens, prefix+type]
     }
+    if(check(tokens, 'leftBracket')) {
+        const prefix = '[]';
+        let type;
+        tokens = tokens.shift();
+        expect(tokens, 'rightBracket');
+        tokens = tokens.shift();
+        [tokens, type] = parseType(tokens);
+        return [tokens, prefix+type]
+    }
+    expect(tokens, 'identifier');
+    const type = tokens.get(0).text;
+    tokens = tokens.shift();
+    return [tokens, type];
 }
 
 function parseIdentifierList(tokens) {
@@ -97,12 +114,12 @@ function parseIdentifierList(tokens) {
 }
 
 function expect(tokens, typeName) {
-    if(tokens.length == 0 || tokens.get(0).type != typeName) {
+    if(tokens.size == 0 || tokens.get(0).type != typeName) {
         throw new Error('Expected '+ typeName);
     }
 }
 function check(tokens, typeName) {
-    if(tokens.length == 0 || tokens.get(0).type != typeName) {
+    if(tokens.size == 0 || tokens.get(0).type != typeName) {
         return false;
     }
     return true;
@@ -121,6 +138,11 @@ function parseResult(tokens) {
 }
 
 function parseTokens(tokens) {
+    expect(tokens, 'identifier');
+    if(tokens.get(0).text != 'func') {
+        throw new Error('Not a function');
+    }
+    tokens = tokens.shift();
     try {
         [tokens2, receiver] = parseParameters(tokens);
         [tokens3, name] = parseIdentifier(tokens2);
@@ -151,7 +173,7 @@ function parseTokens(tokens) {
                     type,
                 }];
             } catch (e) {
-                //console.log(e);
+                console.log(e);
             }
         }
     }
@@ -160,66 +182,61 @@ function parseTokens(tokens) {
 
 (function tokenize() {
     let tokens = [];
+    let inMatch = false;
+    const matchers = {
+        identifier: /\w(\w|\d|\.)*(\{\})?/y,
+        star: /\*/y,
+        leftParen: /\(/y,
+        rightParen: /\)/y,
+        leftBrace: /\{/y,
+        rightBrace: /\}/y,
+        leftBracket: /\[/y,
+        rightBracket: /\]/y,
+        comma: /,/y,
+        space: /\s+/y,
+        spread: /\.\.\./y,
+    };
     lineReader.on('line', function (line) {
-        //console.log('Line from file:', line);
-        const matchers = {
-            identifier: /^(\[\]\s*)?\w(\w|\d|\.)*(\{\})?/,
-            star: /^\*/,
-            leftParen: /^\(/,
-            rightParen: /^\)/,
-            comma: /^,/,
-            leftBrace: /^\{/,
-            rightBrace: /^\}/,
-            space: /^\s+/,
-            spread: /^\.\.\./,
-        };
-        const match = line.match(/func .*/);
-
-        if (match) {
-            var signature = match[0].substring(5);
-            console.log(signature);
-            while (signature.length > 0) {
-                var isToken = false;
-                Object.keys(matchers).forEach(function (matcher) {
-                    const match = signature.match(matchers[matcher]);
-                    if (match) {
-                        if (matcher == 'space') {
-                        }
-                        else if (matcher == 'leftBrace') {
-                            //console.log(tokens);
-                            const result = parseTokens(List(tokens));
-                            if(result) {
-                                const ast = result[1];
-                                console.log(ast);
-                            }
-                            tokens = [];
-                            return;
-                        } else {
-                            tokens.push({
-                                text: match[0],
-                                type: matcher,
-                            });
-                        }
-                        isToken = true;
-                        signature = signature.substring(match[0].length);
-                        //console.log(signature);
-                    }
-                });
-                if (!isToken) {
-                    tokens = [];
-                    return;
-                }
-            }
-
-            /*const nameMatch = signature.search(identifier, index);
-             if(nameMatch != -1) {
-             const name = signature.substring(index, index+nameMatch);
-             console.log('Has name', name);
-             }
-
-             console.log(signature);*/
-
+        let index = inMatch ? 0 : line.search(/func .*/);
+        inMatch = (index != -1);
+        if(!inMatch) {
+            tokens = [];
+            return;
         }
-
+        console.log(line);
+        let isToken = true;
+        while(isToken) {
+            isToken = false;
+            Object.keys(matchers).forEach(function (matcher) {
+                const regex = matchers[matcher];
+                // start search at index
+                regex.lastIndex = index;
+                const match = regex.exec(line);
+                if (match !== null) {
+                    if (matcher == 'space') {
+                    } else if (matcher === 'leftBrace') {
+                        const result = parseTokens(List(tokens));
+                        if(result) {
+                            const ast = result[1];
+                            console.log(ast);
+                            console.log();
+                        }
+                        tokens = [];
+                        inMatch = false;
+                        return;
+                    } else {
+                        tokens.push({
+                            text: match[0],
+                            type: matcher,
+                        });
+                    }
+                    isToken = true;
+                    index = regex.lastIndex;
+                }
+            });
+        }
+        inMatch = false;
+        tokens = [];
+        return;
     });
 })();
