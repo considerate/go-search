@@ -4,7 +4,7 @@
 
 const readLine = require('readline')
 const fs = require('fs')
-const filename = 'files/cover.go';
+const filename = 'files/tests.go';
 const { List } = require('immutable')
 
 
@@ -235,8 +235,7 @@ function parseTokens(tokens) {
                 }
             });
         }
-        inMatch = false;
-        tokens = [];
+        inMatch = true;
         return;
     });
 })();
