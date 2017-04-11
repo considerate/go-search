@@ -7,6 +7,12 @@ const fs = require('fs')
 const filename = 'files/tests.go';
 const { List } = require('immutable')
 
+var elasticsearch = require('elasticsearch');
+
+var client = new elasticsearch.Client({
+    host: 'localhost:9200',
+    log: 'trace'
+});
 
 var lineReader = readLine.createInterface({
     input: fs.createReadStream(filename)
@@ -183,6 +189,7 @@ function parseTokens(tokens) {
 (function tokenize() {
     let tokens = [];
     let inMatch = false;
+    let counter = 1;
     const matchers = {
         identifier: /\w(\w|\d|\.)*(\{\})?/y,
         star: /\*/y,
@@ -218,9 +225,18 @@ function parseTokens(tokens) {
                         const result = parseTokens(List(tokens));
                         if(result) {
                             const ast = result[1];
+                            client.index({
+                                index: 'gosearch',
+                                id: counter,
+                                type: 'function',
+                                body: ast,
+                            },function(err,resp,status) {
+                                //console.log(resp);
+                            });
                             console.log(ast);
                             console.log();
                         }
+                        counter++;
                         tokens = [];
                         inMatch = false;
                         return;
@@ -239,3 +255,30 @@ function parseTokens(tokens) {
         return;
     });
 })();
+
+const search = function search(index, body) {
+    return client.search({index: index, body: body});
+};
+
+function searchIndex() {
+    let body = {
+        size: 20,
+        from: 0,
+        query: {
+            match_all: {}
+        }
+    };
+
+    search('gosearch', body)
+        .then(results => {
+            console.log(`found ${results.hits.total} items in ${results.took}ms:`);
+            results.hits.hits.forEach(
+                (hit, index) => console.log(
+                    `\t${body.from + ++index} - ${hit._source.name} (${hit._source.parameters}) returns ${hit._source.type}`
+                )
+            )
+        })
+        .catch(console.error);
+};
+
+searchIndex();
