@@ -245,13 +245,13 @@ function parseTokens(tokens) {
                             text: match[0],
                             type: matcher,
                         });
+                        inMatch = true;
                     }
                     isToken = true;
                     index = regex.lastIndex;
                 }
             });
         }
-        inMatch = true;
         return;
     });
 })();
