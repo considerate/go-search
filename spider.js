@@ -189,7 +189,7 @@ run(language).then((urlAssociations) => {
 
     console.log(JSON.stringify(urlMaps));
     batchUUID = uuid.v4();
-    fs.writeFileSync([linksPath,batchUUID].join('/') , JSON.stringify(urlMaps));
+    fs.writeFileSync([linksPath,batchUUID].join(filePathSeparator) , JSON.stringify(urlMaps));
 })
 .catch((error) => console.error(error));
 
