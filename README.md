@@ -18,6 +18,11 @@ elasticsearch &
 
 ```
 
+## Fetch golang files from github
+```
+node spider.js
+
+```
 ## Test run tokenizer
 ```
 node Tokenizer.js
