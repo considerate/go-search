@@ -6,7 +6,6 @@ clone git repo
 
 ```
 npm install
-
 ```
 
 ## Install elastic search
@@ -15,8 +14,9 @@ Install and run elastic search
 ```
 brew intstall elastic search
 elasticsearch &
-
 ```
+
+# Running
 
 ## Fetch golang files from github
 ```
@@ -28,6 +28,8 @@ node spider.js
 ```
 node Indexer.js
 
+## Interactive search
+``` 
+node index.js
 ```
-
 
