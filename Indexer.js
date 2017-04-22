@@ -22,7 +22,6 @@ function walkFiles(filepath, url) {
             const relative = fspath.relative(filepath, path);
             // assume files are in folders
             const fileuri = url + relative.substring(relative.indexOf('/'));
-            console.log(fileuri);
             tokenizeFile(path).then(result => {
                 const withUrls = result.map(func => {
                     func.uri = fileuri;
