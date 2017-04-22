@@ -23,10 +23,12 @@
     "handlebars": "^4.0.6",
     "hbs": "^4.0.1",
     "immutable": "^3.8.1",
+    "node-mkdirs": "0.0.1",
     "node-wget": "^0.4.2",
     "parse-link-header": "^0.4.1",
     "request": "^2.81.0",
     "unzip": "^0.1.11",
-    "url-parse": "^1.1.8"
+    "url-parse": "^1.1.8",
+    "uuid": "^3.0.1"
   }
 }

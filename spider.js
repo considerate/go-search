@@ -9,14 +9,20 @@ const parse  = require('parse-link-header');
 const wget = require('node-wget');
 const fs = require('fs');
 const unzip = require('unzip');
-const HashMap = require('hashmap');
+const uuid = require('uuid');
+const mkdirs = require('node-mkdirs');
 
 const language = 'go';
 const languageFile = '.go';
 const startURL = 'https://api.github.com/search/repositories?q=language:'+language+'&page=33';
 // WARNING: github has i request limit. 10 per minute if unauthorized and 30 authorized. 
 // For this case there are 34 pages in total, so only fetching the three last for now
-const filesPath = 'files/';
+const filesPath = 'files';
+const linksPath = 'links';
+const filePathSeparator = '/';
+mkdirs(linksPath);
+mkdirs(filesPath);
+
 
 /**
  * Unzip a repository zip file. Only unzipping the relevant language files and directories
@@ -78,8 +84,8 @@ function fetchRepo(repo) {
         let url = new URL(repo.url);
         // remove word "repos/" in url with substring
         let fetchURL = 'https://github.com/'+url.pathname.substring(7)+'/archive/master.zip'
-        let zipFile = filesPath + repo.id + '.zip';
-        let repoPath = filesPath + repo.id;
+        let zipFile = [filesPath, repo.id].join(filePathSeparator) + '.zip';
+        let repoPath = [filesPath, repo.id].join(filePathSeparator);
         if(fs.existsSync(repoPath)){
             // dont download repo if unzipped version already exists
             return resolve();
@@ -145,12 +151,6 @@ function run(language){
         }
     };
 
-    // Create the file path if not already existing
-    try{
-        fs.mkdirSync(filesPath);
-    } catch(e) {
-    }
-
     // extract the relevant info from repo object
     function getUrlMaps(repos) {
         return repos.map(repo => [repo.id, repo.url]);
@@ -180,10 +180,16 @@ function run(language){
     return fetchAll(startURL)
 }
 
-run(language).then((urlMaps) => {
+run(language).then((urlAssociations) => {
     // TODO: This map needs to be printed to file for the indexer
-    console.log(urlMaps);
-    console.error('DONE');
+    const urlMaps = urlAssociations.reduce( (acc, tuple) => {
+        acc[tuple[0]] = tuple[1];
+        return acc;
+    }, {});
+
+    console.log(JSON.stringify(urlMaps));
+    batchUUID = uuid.v4();
+    fs.writeFileSync([linksPath,batchUUID].join('/') , JSON.stringify(urlMaps));
 })
 .catch((error) => console.error(error));
 
