@@ -2,10 +2,11 @@
  * Created by Administrator on 07.04.2017.
  */
 
-const readLine = require('readline')
+const readLine = require('readline');
+const file = require('file');
 const fs = require('fs')
-const filename = 'files/tests.go';
-const { List } = require('immutable')
+const filepath = 'files/';
+const { List } = require('immutable');
 
 var elasticsearch = require('elasticsearch');
 
@@ -14,9 +15,13 @@ var client = new elasticsearch.Client({
     log: 'trace'
 });
 
-var lineReader = readLine.createInterface({
-    input: fs.createReadStream(filename)
-});
+
+function createLineReader(filename){
+    return readLine.createInterface({
+        input: fs.createReadStream(filename)
+    });
+}
+
 
 function parseParameters(tokens) {
     expect(tokens, 'leftParen');
@@ -186,7 +191,7 @@ function parseTokens(tokens) {
 }
 
 
-(function tokenize() {
+function tokenize(_, dirPath, dirs, files) {
     let tokens = [];
     let inMatch = false;
     let counter = 1;
@@ -203,58 +208,63 @@ function parseTokens(tokens) {
         space: /\s+/y,
         spread: /\.\.\./y,
     };
-    lineReader.on('line', function (line) {
-        let index = inMatch ? 0 : line.search(/func .*/);
-        inMatch = (index != -1);
-        if(!inMatch) {
-            tokens = [];
-            return;
-        }
-        console.log(line);
-        let isToken = true;
-        while(isToken) {
-            isToken = false;
-            Object.keys(matchers).forEach(function (matcher) {
-                const regex = matchers[matcher];
-                // start search at index
-                regex.lastIndex = index;
-                const match = regex.exec(line);
-                if (match !== null) {
-                    if (matcher == 'space') {
-                    } else if (matcher === 'leftBrace') {
-                        const result = parseTokens(List(tokens));
-                        if(result) {
-                            const ast = result[1];
-                            client.index({
-                                index: 'gosearch',
-                                id: counter,
-                                type: 'function',
-                                body: ast,
-                            },function(err,resp,status) {
-                                //console.log(resp);
+    files.forEach( function(f) {
+        lineReader = createLineReader(f);
+        lineReader.on('line', function (line) {
+            let index = inMatch ? 0 : line.search(/func .*/);
+            inMatch = (index != -1);
+            if(!inMatch) {
+                tokens = [];
+                return;
+            }
+            console.log(line);
+            let isToken = true;
+            while(isToken) {
+                isToken = false;
+                Object.keys(matchers).forEach(function (matcher) {
+                    const regex = matchers[matcher];
+                    // start search at index
+                    regex.lastIndex = index;
+                    const match = regex.exec(line);
+                    if (match !== null) {
+                        if (matcher == 'space') {
+                        } else if (matcher === 'leftBrace') {
+                            const result = parseTokens(List(tokens));
+                            if(result) {
+                                const ast = result[1];
+                                client.index({
+                                    index: 'gosearch',
+                                    id: counter,
+                                    type: 'function',
+                                    body: ast,
+                                },function(err,resp,status) {
+                                    //console.log(resp);
+                                });
+                                console.log(ast);
+                                console.log();
+                            }
+                            counter++;
+                            tokens = [];
+                            inMatch = false;
+                            return;
+                        } else {
+                            tokens.push({
+                                text: match[0],
+                                type: matcher,
                             });
-                            console.log(ast);
-                            console.log();
+                            inMatch = true;
                         }
-                        counter++;
-                        tokens = [];
-                        inMatch = false;
-                        return;
-                    } else {
-                        tokens.push({
-                            text: match[0],
-                            type: matcher,
-                        });
-                        inMatch = true;
+                        isToken = true;
+                        index = regex.lastIndex;
                     }
-                    isToken = true;
-                    index = regex.lastIndex;
-                }
-            });
-        }
-        return;
+                });
+            }
+            return;
+        });
     });
-})();
+}
+
+file.walk(filepath, tokenize);
 
 const search = function search(index, body) {
     return client.search({index: index, body: body});
