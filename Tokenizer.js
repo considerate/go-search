@@ -1,29 +1,20 @@
 /**
  * Created by Administrator on 07.04.2017.
  */
-
 const readLine = require('readline');
-const file = require('file');
 const fs = require('fs')
-const filepath = 'files/';
 const { List } = require('immutable');
+const {Readable} = require('stream');
 
-var elasticsearch = require('elasticsearch');
-
-var client = new elasticsearch.Client({
-    host: 'localhost:9200',
-    log: 'trace'
-});
-
-
-function createLineReader(filename){
+function createLineReader(stream){
     return readLine.createInterface({
-        input: fs.createReadStream(filename)
+        input: stream,
     });
 }
 
 
 function parseParameters(tokens) {
+    console.error(':: parameters');
     expect(tokens, 'leftParen');
     let parameters = List([]);
     tokens = tokens.shift();
@@ -81,6 +72,7 @@ function parseParameter(tokens) {
 }
 
 function parseType(tokens) {
+    console.error(':: type');
     if(check(tokens, 'leftParen')) {
         tokens = tokens.shift();
         let type;
@@ -137,87 +129,122 @@ function check(tokens, typeName) {
 }
 
 function parseResult(tokens) {
+    console.error(':: result');
     try {
         return parseParameters(tokens);
     } catch (e) {
-        try {
-            return parseType(tokens);
-        } catch (e) {
-            return [tokens, 'void'];
-        }
+    }
+    try {
+        return parseType(tokens);
+    } catch (e) {
+        return [tokens, 'void'];
     }
 }
 
 function parseTokens(tokens) {
+    console.error(':: function');
+    console.error(JSON.stringify(tokens));
     expect(tokens, 'identifier');
     if(tokens.get(0).text != 'func') {
         throw new Error('Not a function');
     }
     tokens = tokens.shift();
     try {
+        console.error(':: method');
+        // func (Receiver r) methodName(arguments) result
         [tokens2, receiver] = parseParameters(tokens);
         [tokens3, name] = parseIdentifier(tokens2);
         [tokens4, parameters] = parseParameters(tokens3);
-        [tokens5, type] = parseResult(tokens4);
+        [tokens5, result] = parseResult(tokens4);
         return [tokens4, {
             object: receiver,
             name,
             parameters,
-            type,
+            result,
         }];
     } catch (e) {
-        try {
-            [tokens2, name] = parseIdentifier(tokens);
-            [tokens3, parameters] = parseParameters(tokens2);
-            [tokens4, type] = parseResult(tokens3);
-            return [tokens4, {
-                name,
-                parameters,
-                type,
-            }];
-        } catch (e) {
-            try {
-                [tokens2, parameters] = parseParameters(tokens);
-                [tokens3, type] = parseResult(tokens2);
-                return [tokens3, {
-                    parameters,
-                    type,
-                }];
-            } catch (e) {
-                console.log(e);
-            }
-        }
+    }
+    try {
+        console.error(':: named function');
+        // func functionName(arguments) result
+        [tokens2, name] = parseIdentifier(tokens);
+        [tokens3, parameters] = parseParameters(tokens2);
+        [tokens4, result] = parseResult(tokens3);
+        return [tokens4, {
+            name,
+            parameters,
+            result,
+        }];
+    } catch (e) {
+    }
+    try {
+        console.error(':: anon function');
+        // func (arguments) result
+        [tokens2, parameters] = parseParameters(tokens);
+        [tokens3, result] = parseResult(tokens2);
+        return [tokens3, {
+            parameters,
+            result,
+        }];
+    } catch (e) {
+        console.error(e);
     }
 }
 
+const matchers = {
+    identifier: /\w(\w|\d|\.)*(\{\})?/y,
+    star: /\*/y,
+    leftParen: /\(/y,
+    rightParen: /\)/y,
+    leftBrace: /\{/y,
+    rightBrace: /\}/y,
+    leftBracket: /\[/y,
+    rightBracket: /\]/y,
+    comma: /,/y,
+    space: /\s+/y,
+    spread: /\.\.\./y,
+    lineComment: /\/\//y,
+};
 
-function tokenize(_, dirPath, dirs, files) {
+function tokenizeFile(filename) {
+    return tokenizeStream(fs.createReadStream(filename))
+}
+exports.tokenizeFile = tokenizeFile;
+
+function tokenizeString(string) {
+    const stream = new Readable();
+    stream.push(string);
+    stream.push(null);
+    return tokenizeStream(stream)
+}
+exports.tokenizeString = tokenizeString;
+
+function tokenizeStream(stream) {
     let tokens = [];
     let inMatch = false;
     let counter = 1;
-    const matchers = {
-        identifier: /\w(\w|\d|\.)*(\{\})?/y,
-        star: /\*/y,
-        leftParen: /\(/y,
-        rightParen: /\)/y,
-        leftBrace: /\{/y,
-        rightBrace: /\}/y,
-        leftBracket: /\[/y,
-        rightBracket: /\]/y,
-        comma: /,/y,
-        space: /\s+/y,
-        spread: /\.\.\./y,
-    };
-    files.forEach( function(f) {
-        lineReader = createLineReader(f);
+    return new Promise(function (resolve, reject) {
+        const lineReader = createLineReader(stream);
+        const signatures = [];
+        lineReader.on('end', function () {
+            console.log('END');
+        });
+        lineReader.on('close', function () {
+            console.log('CLOSE');
+            resolve(List(signatures));
+        });
         lineReader.on('line', function (line) {
+            const commentIndex = line.search(matchers.lineComment);
+            if(commentIndex != -1) {
+                line = line.substring(0,commentIndex);
+            }
             let index = inMatch ? 0 : line.search(/func .*/);
             inMatch = (index != -1);
             if(!inMatch) {
                 tokens = [];
                 return;
             }
-            console.log(line);
+
             let isToken = true;
             while(isToken) {
                 isToken = false;
@@ -226,22 +253,14 @@ function tokenize(_, dirPath, dirs, files) {
                     // start search at index
                     regex.lastIndex = index;
                     const match = regex.exec(line);
+
                     if (match !== null) {
                         if (matcher == 'space') {
                         } else if (matcher === 'leftBrace') {
                             const result = parseTokens(List(tokens));
                             if(result) {
-                                const ast = result[1];
-                                client.index({
-                                    index: 'gosearch',
-                                    id: counter,
-                                    type: 'function',
-                                    body: ast,
-                                },function(err,resp,status) {
-                                    //console.log(resp);
-                                });
-                                console.log(ast);
-                                console.log();
+                                const parseTree = result[1];
+                                signatures.push(parseTree);
                             }
                             counter++;
                             tokens = [];
@@ -258,37 +277,9 @@ function tokenize(_, dirPath, dirs, files) {
                         index = regex.lastIndex;
                     }
                 });
+
             }
             return;
         });
     });
 }
-
-file.walk(filepath, tokenize);
-
-const search = function search(index, body) {
-    return client.search({index: index, body: body});
-};
-
-function searchIndex() {
-    let body = {
-        size: 20,
-        from: 0,
-        query: {
-            match_all: {}
-        }
-    };
-
-    search('gosearch', body)
-        .then(results => {
-            console.log(`found ${results.hits.total} items in ${results.took}ms:`);
-            results.hits.hits.forEach(
-                (hit, index) => console.log(
-                    `\t${body.from + ++index} - ${hit._source.name} (${hit._source.parameters}) returns ${hit._source.type}`
-                )
-            )
-        })
-        .catch(console.error);
-};
-
-searchIndex();

@@ -66,7 +66,7 @@ function unzipRepo(zipFile){
                 }
             })
             .on('finish', function() {
-                fs.unlink(zipFile);
+                fs.unlinkSync(zipFile);
                 return resolve();
             });
     });
