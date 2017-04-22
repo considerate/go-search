@@ -25,6 +25,7 @@ function parseParameters(tokens) {
         }
     } catch (e) {
     }
+    console.error(':: rest of tokens', JSON.stringify(tokens));
     expect(tokens, 'rightParen');
     tokens = tokens.shift();
     return [tokens, parameters];
@@ -33,7 +34,8 @@ function parseParameters(tokens) {
 function parseParameterList(tokens) {
     let parameter;
     [tokens, parameter] = parseParameter(tokens);
-    if(check(tokens,'comma')) {
+    console.error('::paramter ', parameter)
+    if(check(tokens, 'comma')) {
         tokens = tokens.shift();
         let parameters;
         [tokens, parameters] = parseParameterList(tokens);
@@ -222,21 +224,19 @@ exports.tokenizeString = tokenizeString;
 function tokenizeStream(stream) {
     let tokens = [];
     let inMatch = false;
-    let counter = 1;
     return new Promise(function (resolve, reject) {
         const lineReader = createLineReader(stream);
         const signatures = [];
         lineReader.on('end', function () {
-            console.log('END');
+            resolve(List(signatures));
         });
         lineReader.on('close', function () {
-            console.log('CLOSE');
             resolve(List(signatures));
         });
         lineReader.on('line', function (line) {
             const commentIndex = line.search(matchers.lineComment);
             if(commentIndex != -1) {
-                line = line.substring(0,commentIndex);
+                line = line.substring(0, commentIndex);
             }
             let index = inMatch ? 0 : line.search(/func .*/);
             inMatch = (index != -1);
@@ -262,9 +262,9 @@ function tokenizeStream(stream) {
                                 const parseTree = result[1];
                                 signatures.push(parseTree);
                             }
-                            counter++;
                             tokens = [];
                             inMatch = false;
+                            isToken = false;
                             return;
                         } else {
                             tokens.push({
