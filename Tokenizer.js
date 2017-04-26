@@ -1,24 +1,22 @@
 /**
  * Created by Administrator on 07.04.2017.
  */
-
-const readLine = require('readline')
+const readLine = require('readline');
 const fs = require('fs')
-const filename = 'files/tests.go';
-const { List } = require('immutable')
 
-var elasticsearch = require('elasticsearch');
+const { List } = require('immutable');
+const {Readable} = require('stream');
 
-var client = new elasticsearch.Client({
-    host: 'localhost:9200',
-    log: 'trace'
-});
+function createLineReader(stream){
+    return readLine.createInterface({
+        input: stream,
+    });
+}
 
-var lineReader = readLine.createInterface({
-    input: fs.createReadStream(filename)
-});
+
 
 function parseParameters(tokens) {
+    console.error(':: parameters');
     expect(tokens, 'leftParen');
     let parameters = List([]);
     tokens = tokens.shift();
@@ -28,7 +26,9 @@ function parseParameters(tokens) {
             tokens = tokens.shift();
         }
     } catch (e) {
+        console.error(e);
     }
+    console.error(':: rest of tokens', JSON.stringify(tokens));
     expect(tokens, 'rightParen');
     tokens = tokens.shift();
     return [tokens, parameters];
@@ -37,13 +37,14 @@ function parseParameters(tokens) {
 function parseParameterList(tokens) {
     let parameter;
     [tokens, parameter] = parseParameter(tokens);
-    if(check(tokens,'comma')) {
+    console.error('::paramter ', parameter)
+    if(check(tokens, 'comma')) {
         tokens = tokens.shift();
         let parameters;
         [tokens, parameters] = parseParameterList(tokens);
-        return [tokens, parameters.unshift(parameter)];
+        return [tokens, parameter.concat(parameters)];
     }
-    return [tokens, List([parameter])];
+    return [tokens, parameter];
 }
 
 function parseIdentifier(tokens) {
@@ -67,15 +68,17 @@ function parseParameter(tokens) {
     }
     if(check(tokens,'rightParen') && identifiers.size > 0) {
         // No identifiers, list of types
-        //const type = '('+identifiers.join(',')+')';
-        return [tokens, identifiers];
+        const params = identifiers.map(type => List(['var', type]));
+        return [tokens, params];
     }
     let type;
     [tokens, type] = parseType(tokens);
-    return [tokens, identifiers.push(prefix+type)];
+    const params = identifiers.map(i => List([i, type]));
+    return [tokens, params];
 }
 
 function parseType(tokens) {
+    console.error(':: type');
     if(check(tokens, 'leftParen')) {
         tokens = tokens.shift();
         let type;
@@ -132,153 +135,156 @@ function check(tokens, typeName) {
 }
 
 function parseResult(tokens) {
+    console.error(':: result');
     try {
         return parseParameters(tokens);
     } catch (e) {
-        try {
-            return parseType(tokens);
-        } catch (e) {
-            return [tokens, 'void'];
-        }
+    }
+    try {
+        [tokens, type] = parseType(tokens);
+        return [tokens, List(['var', type])];
+    } catch (e) {
+        return [tokens, List(['var', 'void'])];
     }
 }
 
 function parseTokens(tokens) {
+    console.error(':: function');
+    console.error(JSON.stringify(tokens));
     expect(tokens, 'identifier');
     if(tokens.get(0).text != 'func') {
         throw new Error('Not a function');
     }
     tokens = tokens.shift();
     try {
+        console.error(':: method');
+        // func (Receiver r) methodName(parameters) result
         [tokens2, receiver] = parseParameters(tokens);
         [tokens3, name] = parseIdentifier(tokens2);
         [tokens4, parameters] = parseParameters(tokens3);
-        [tokens5, type] = parseResult(tokens4);
+        [tokens5, result] = parseResult(tokens4);
         return [tokens4, {
             object: receiver,
             name,
             parameters,
-            type,
+            result,
         }];
     } catch (e) {
-        try {
-            [tokens2, name] = parseIdentifier(tokens);
-            [tokens3, parameters] = parseParameters(tokens2);
-            [tokens4, type] = parseResult(tokens3);
-            return [tokens4, {
-                name,
-                parameters,
-                type,
-            }];
-        } catch (e) {
-            try {
-                [tokens2, parameters] = parseParameters(tokens);
-                [tokens3, type] = parseResult(tokens2);
-                return [tokens3, {
-                    parameters,
-                    type,
-                }];
-            } catch (e) {
-                console.log(e);
-            }
-        }
+    }
+    try {
+        console.error(':: named function');
+        // func functionName(parameters) result
+        [tokens2, name] = parseIdentifier(tokens);
+        [tokens3, parameters] = parseParameters(tokens2);
+        [tokens4, result] = parseResult(tokens3);
+        return [tokens4, {
+            name,
+            parameters,
+            result,
+        }];
+    } catch (e) {
+    }
+    try {
+        console.error(':: anon function');
+        // func (parameters) result
+        [tokens2, parameters] = parseParameters(tokens);
+        [tokens3, result] = parseResult(tokens2);
+        return [tokens3, {
+            parameters,
+            result,
+        }];
+    } catch (e) {
+        console.error(e);
     }
 }
 
+const matchers = {
+    identifier: /\w(\w|\d|\.)*(\{\})?/y,
+    star: /\*/y,
+    leftParen: /\(/y,
+    rightParen: /\)/y,
+    leftBrace: /\{/y,
+    rightBrace: /\}/y,
+    leftBracket: /\[/y,
+    rightBracket: /\]/y,
+    comma: /,/y,
+    space: /\s+/y,
+    spread: /\.\.\./y,
+    lineComment: /\/\//y,
+};
 
-(function tokenize() {
+function tokenizeFile(filename) {
+    return tokenizeStream(fs.createReadStream(filename))
+}
+exports.tokenizeFile = tokenizeFile;
+
+function tokenizeString(string) {
+    const stream = new Readable();
+    stream.push(string);
+    stream.push(null);
+    return tokenizeStream(stream)
+}
+exports.tokenizeString = tokenizeString;
+
+function tokenizeStream(stream) {
     let tokens = [];
     let inMatch = false;
-    let counter = 1;
-    const matchers = {
-        identifier: /\w(\w|\d|\.)*(\{\})?/y,
-        star: /\*/y,
-        leftParen: /\(/y,
-        rightParen: /\)/y,
-        leftBrace: /\{/y,
-        rightBrace: /\}/y,
-        leftBracket: /\[/y,
-        rightBracket: /\]/y,
-        comma: /,/y,
-        space: /\s+/y,
-        spread: /\.\.\./y,
-    };
-    lineReader.on('line', function (line) {
-        let index = inMatch ? 0 : line.search(/func .*/);
-        inMatch = (index != -1);
-        if(!inMatch) {
-            tokens = [];
-            return;
-        }
-        console.log(line);
-        let isToken = true;
-        while(isToken) {
-            isToken = false;
-            Object.keys(matchers).forEach(function (matcher) {
-                const regex = matchers[matcher];
-                // start search at index
-                regex.lastIndex = index;
-                const match = regex.exec(line);
-                if (match !== null) {
-                    if (matcher == 'space') {
-                    } else if (matcher === 'leftBrace') {
-                        const result = parseTokens(List(tokens));
-                        if(result) {
-                            const ast = result[1];
-                            client.index({
-                                index: 'gosearch',
-                                id: counter,
-                                type: 'function',
-                                body: ast,
-                            },function(err,resp,status) {
-                                //console.log(resp);
+    return new Promise(function (resolve, reject) {
+        const lineReader = createLineReader(stream);
+        const signatures = [];
+        lineReader.on('end', function () {
+            resolve(List(signatures));
+        });
+        lineReader.on('close', function () {
+            resolve(List(signatures));
+        });
+        lineReader.on('line', function (line) {
+            const commentIndex = line.search(matchers.lineComment);
+            if(commentIndex != -1) {
+                line = line.substring(0, commentIndex);
+            }
+            let index = inMatch ? 0 : line.search(/func .*/);
+            inMatch = (index != -1);
+            if(!inMatch) {
+                tokens = [];
+                return;
+            }
+
+            let isToken = true;
+            while(isToken) {
+                isToken = false;
+                Object.keys(matchers).forEach(function (matcher) {
+                    const regex = matchers[matcher];
+                    // start search at index
+                    regex.lastIndex = index;
+                    const match = regex.exec(line);
+
+                    if (match !== null) {
+                        if (matcher == 'space') {
+                        } else if (matcher === 'leftBrace') {
+                            const result = parseTokens(List(tokens));
+                            if(result) {
+                                const parseTree = result[1];
+                                signatures.push(parseTree);
+                            }
+                            tokens = [];
+                            inMatch = false;
+                            isToken = false;
+                            return;
+                        } else {
+                            tokens.push({
+                                text: match[0],
+                                type: matcher,
                             });
-                            console.log(ast);
-                            console.log();
+                            inMatch = true;
                         }
-                        counter++;
-                        tokens = [];
-                        inMatch = false;
-                        return;
-                    } else {
-                        tokens.push({
-                            text: match[0],
-                            type: matcher,
-                        });
-                        inMatch = true;
+                        isToken = true;
+                        index = regex.lastIndex;
                     }
-                    isToken = true;
-                    index = regex.lastIndex;
-                }
-            });
-        }
-        return;
+                });
+
+            }
+            return;
+        });
     });
-})();
-
-const search = function search(index, body) {
-    return client.search({index: index, body: body});
-};
-
-function searchIndex() {
-    let body = {
-        size: 20,
-        from: 0,
-        query: {
-            match_all: {}
-        }
-    };
-
-    search('gosearch', body)
-        .then(results => {
-            console.log(`found ${results.hits.total} items in ${results.took}ms:`);
-            results.hits.hits.forEach(
-                (hit, index) => console.log(
-                    `\t${body.from + ++index} - ${hit._source.name} (${hit._source.parameters}) returns ${hit._source.type}`
-                )
-            )
-        })
-        .catch(console.error);
-};
-
-searchIndex();
+}

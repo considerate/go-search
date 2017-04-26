@@ -18,9 +18,15 @@ elasticsearch &
 
 ```
 
-## Test run tokenizer
+## Fetch golang files from github
 ```
-node Tokenizer.js
+node spider.js
+
+```
+
+## Test run indexer
+```
+node Indexer.js
 
 ```
 
