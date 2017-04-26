@@ -23,9 +23,10 @@ elasticsearch &
 node spider.js
 
 ```
-## Test run tokenizer
+
+## Test run indexer
 ```
-node Tokenizer.js
+node Indexer.js
 
 ```
 
