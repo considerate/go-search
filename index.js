@@ -1,4 +1,6 @@
 const express = require('express');
+const elasticsearch = require('elasticsearch');
+
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -8,28 +10,54 @@ app.set('view engine', 'html');
 app.set('view engine', 'hbs');
 app.set('views', __dirname + '/views')
 
-const context = {
-    results: [
-    {
-        "name": "read",
-        "arguments": [["x", "int"], ["y", "double"], ["str", "string"]],
-        "returns": "string"
-    },
-    {
-        "name": "write",
-        "arguments": [["offset", "int"], ["length", "double"]],
-        "returns": ""
-    },
-    ],
-};
+const client = new elasticsearch.Client({
+    host: 'localhost:9200',
+    log: 'trace'
+});
+
 app.get('/', function(req, res) {
     const query = req.query.q;
-    //TODO: replace mocked context with results from elasticsearch
-    const results = context.results
-        .filter(r => (r.name || '').indexOf(query) != -1);
-    res.render('index', {
-        results,
-    });
+        if(query){
+            // TODO: parse query by tokenizer
+            //
+            // We can do multi search for different things
+            // OR query_string searches in all fields it seems like
+            
+            // Format of query is 
+            // [{header},
+            // {queryBody},
+            // {header},
+            // {queryBody}, ...]
+            let body = [{ index: 'gosearch'},
+                        {query: {
+                                match: {
+                                    name: query,
+                                }
+                            }
+                        },
+                        { index: 'gosearch'},
+                        {query: { query_string: { query}}},
+                    ];
+            client.msearch({body})
+                .then(result => {
+                    //console.log(JSON.stringify(result));
+                    const results = result.responses
+                        .reduce( (acc, response) => {
+                            // TODO: handle duplicate hits
+                            // maybe that should get increased scores?
+                            acc = acc.concat(response.hits.hits.map( r => r._source));
+                            return acc;
+                        },[]);
+                    results.map((r) => console.log(JSON.stringify(r)));
+                    res.render('index', {
+                            results,
+                        });
+                })
+                .catch(console.error);
+    }else {
+        res.render('index', {});
+    }
+
 });
 
 app.listen(PORT, function () {
