@@ -24,6 +24,7 @@ function parseParameters(tokens) {
             tokens = tokens.shift();
         }
     } catch (e) {
+        console.error(e);
     }
     console.error(':: rest of tokens', JSON.stringify(tokens));
     expect(tokens, 'rightParen');
@@ -39,9 +40,9 @@ function parseParameterList(tokens) {
         tokens = tokens.shift();
         let parameters;
         [tokens, parameters] = parseParameterList(tokens);
-        return [tokens, parameters.unshift(parameter)];
+        return [tokens, parameter.concat(parameters)];
     }
-    return [tokens, List([parameter])];
+    return [tokens, parameter];
 }
 
 function parseIdentifier(tokens) {
@@ -65,12 +66,13 @@ function parseParameter(tokens) {
     }
     if(check(tokens,'rightParen') && identifiers.size > 0) {
         // No identifiers, list of types
-        //const type = '('+identifiers.join(',')+')';
-        return [tokens, identifiers];
+        const params = identifiers.map(type => List(['var', type]));
+        return [tokens, params];
     }
     let type;
     [tokens, type] = parseType(tokens);
-    return [tokens, identifiers.push(prefix+type)];
+    const params = identifiers.map(i => List([i, type]));
+    return [tokens, params];
 }
 
 function parseType(tokens) {
@@ -137,9 +139,10 @@ function parseResult(tokens) {
     } catch (e) {
     }
     try {
-        return parseType(tokens);
+        [tokens, type] = parseType(tokens);
+        return [tokens, List(['var', type])];
     } catch (e) {
-        return [tokens, 'void'];
+        return [tokens, List(['var', 'void'])];
     }
 }
 
@@ -153,7 +156,7 @@ function parseTokens(tokens) {
     tokens = tokens.shift();
     try {
         console.error(':: method');
-        // func (Receiver r) methodName(arguments) result
+        // func (Receiver r) methodName(parameters) result
         [tokens2, receiver] = parseParameters(tokens);
         [tokens3, name] = parseIdentifier(tokens2);
         [tokens4, parameters] = parseParameters(tokens3);
@@ -168,7 +171,7 @@ function parseTokens(tokens) {
     }
     try {
         console.error(':: named function');
-        // func functionName(arguments) result
+        // func functionName(parameters) result
         [tokens2, name] = parseIdentifier(tokens);
         [tokens3, parameters] = parseParameters(tokens2);
         [tokens4, result] = parseResult(tokens3);
@@ -181,7 +184,7 @@ function parseTokens(tokens) {
     }
     try {
         console.error(':: anon function');
-        // func (arguments) result
+        // func (parameters) result
         [tokens2, parameters] = parseParameters(tokens);
         [tokens3, result] = parseResult(tokens2);
         return [tokens3, {
