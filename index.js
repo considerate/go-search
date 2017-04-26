@@ -40,7 +40,7 @@ app.get('/', function(req, res) {
                     ];
             client.msearch({body})
                 .then(result => {
-                    console.log(JSON.stringify(result));
+                    //console.log(JSON.stringify(result));
                     const results = result.responses
                         .reduce( (acc, response) => {
                             // TODO: handle duplicate hits
@@ -48,6 +48,7 @@ app.get('/', function(req, res) {
                             acc = acc.concat(response.hits.hits.map( r => r._source));
                             return acc;
                         },[]);
+                    results.map((r) => console.log(JSON.stringify(r)));
                     res.render('index', {
                             results,
                         });
