@@ -12,7 +12,7 @@ const DELETE = false;
 const SEARCH = true;
 
 // Create index
-/*client.indices.create({
+client.indices.create({
     index: 'gosearchindex'
 },function(err,resp,status) {
     if(err) {
@@ -24,39 +24,39 @@ const SEARCH = true;
 });
 
 // Add documents to index
-client.index({
+/*client.index({
     index: 'gosearchindex',
     id: '1',
     type: 'function',
     body: {
         "object": [["s", "SortService"]],
-        "object_info" : [["SortService", "1"]],
+        "object_info" : {"SortService" : 1},
         "name" : "quickSort1",
         "name_parts" : ["quick", "sort", "1"],
         "parameters" : [["x", "int"], ["y", "int"]],
-        "parameters_info" : [["int", "2"]],
+        "parameters_info" : {"int" : 2},
         "result" : [["first", "int"], ["second", "int"]],
-        "result_info" : [["int", "2"]],
+        "result_info" : {"int" : 2},
         "uri" : "https:\/\/api.github.com\/quickSort",
         "votes" : 7
     }
 },function(err,resp,status) {
     console.log(resp);
 });
-
+/*
 client.index({
     index: 'gosearchindex',
     id: '2',
     type: 'function',
     body: {
         "object": [["s", "SortService"]],
-        "object_info" : [["SortService", "1"]],
+        "object_info" : {"SortService" : "1"},
         "name" : "bogoSort",
         "name_parts" : ["bogo", "sort"],
         "parameters" : [["x", "int"], ["y", "int"]],
-        "parameters_info" : [["int", "2"]],
+        "parameters_info" : {"int" : "2"},
         "result" : [["first", "int"], ["second", "int"]],
-        "result_info" : [["int", "2"]],
+        "result_info" : {"int" : "2"},
         "uri" : "https:\/\/api.github.com\/bogoSort",
         "votes" : 1
     }
@@ -70,13 +70,13 @@ client.index({
     type: 'function',
     body: {
         "object": [["s", "SortService"]],
-        "object_info" : [["SortService", "1"]],
+        "object_info" : {"SortService" : "1"},
         "name" : "quickSort2",
         "name_parts" : ["quick", "sort", "2"],
         "parameters" : [["x", "int"], ["y", "int"], ["z", "int"]],
-        "parameters_info" : [["int", "3"]],
+        "parameters_info" : {"int" : "3"},
         "result" : [["first", "int"], ["second", "int"], [["third", "int"]]],
-        "result_info" : [["int", "3"]],
+        "result_info" : {"int" : "3"},
         "uri" : "https:\/\/api.github.com\/quickSort",
         "votes" : 5
     }
@@ -90,13 +90,13 @@ client.index({
     type: 'function',
     body: {
         "object": [["s", "SortService"]],
-        "object_info" : [["SortService", "1"]],
+        "object_info" : {"SortService" : "1"},
         "name" : "wordSort",
         "name_parts" : ["word", "sort"],
         "parameters" : [["x", "String"], ["y", "String"]],
-        "parameters_info" : [["String", "2"]],
+        "parameters_info" : {"String" : "2"},
         "result" : [["first", "String"], ["second", "String"]],
-        "result_info" : [["String", "2"]],
+        "result_info" : {"String" : "2"},
         "uri" : "https:\/\/api.github.com\/wordSort",
         "votes" : 3
     }
@@ -110,19 +110,19 @@ client.index({
     type: 'function',
     body: {
         "object": [["s", "SortService"]],
-        "object_info" : [["SortService", "1"]],
+        "object_info" : {"SortService" : "1"},
         "name" : "mixedSort",
         "name_parts" : ["mixed", "sort"],
         "parameters" : [["x", "int"], ["y", "int"], ["z", "String"]],
-        "parameters_info" : [["int", "2"], ["String", 1]],
+        "parameters_info" : {"int" : "2", "String" : 1},
         "result" : [["first", "object"], ["second", "object"], ["third", "object"]],
-        "result_info" : [["object", "3"]],
+        "result_info" : {"object" : "3"},
         "uri" : "https:\/\/api.github.com\/mixedSort",
         "votes" : 4
     }
 },function(err,resp,status) {
     console.log(resp);
-});
+});*/
 
 // Query index
 /*
@@ -133,6 +133,7 @@ Current scores for query "quickSort(int, int) int":
  - mixedSort: 1.0511965
  - wordSort: 0
  */
+
  if(SEARCH) {
 	client.search({
 		index: 'gosearchindex',
@@ -145,26 +146,62 @@ Current scores for query "quickSort(int, int) int":
 							should: [{
 								terms: {"object": [], boost: 1}
 							}, {
-								terms: {"object_info" : [], boost : 1}
+								//terms: {"object_info" : {}, boost : 1}
+							//}, {
+								match: {"name": {query: "sort", boost: 5}}
 							}, {
-								match: {"name": {query: "quickSort", boost: 5}}
-							}, {
-								terms: {"name_parts": ["quick", "sort"], boost: 5}
+								terms: {"name_parts": ["sort"], boost: 5}
 							}, {
 								terms: {"parameters": ["int", "int"], boost: 2}
-							}, {
-								terms: {"parameters_info": ["int", "2"], boost: 2}
+							//}, {
+							//    terms: {"parameters_info": {"int" : "2"}, boost: 2}
 							}, {
 								terms: {"result": ["int"], boost: 2}
-							}, {
-								terms: {"result_info": ["int", "1"], boost: 2}
+							//}, {
+							//    terms: {"result_info": {"int" : "1"}, boost: 2}
 							}]
 						}
 					},
-					field_value_factor: {
-						field: "votes",
-						modifier: "log1p"
-					}
+					functions: [
+						{
+							script_score: {
+								/*"parameters_info['int']": {
+									"origin": "2",
+									"scale": "1",
+									"decay": 0.999
+								}*/
+								//lang: "javascript",
+								/*script:     {
+										lang: "javascript",
+										inline: "let p = 0; " +
+										//"for(key in parameters_info) {" +
+									//           "Object.keys(parameters_info).forEach(key => {" +
+									//"                                                   if(doc[key] !== undefined) {" +
+									//"                                                       ++p;" +
+									//"                                                   }" +
+									//"                                               }" +
+									"return p;"
+								}*/
+								script: {
+									inline: "int p = 0; " +
+											//"for(int i = 0; i < doc['parameters_info.int'].length; i++) {" +
+											//"   p++;" +
+											//"}" +
+											//"if(doc['parameters_info.float'] == true) ++p" +
+											"try {" +
+											"p = (int) doc['parameters_info.float'][0];" +
+											"} catch (Exception e) {}" +
+											"return p;"
+								}
+							}
+						},
+						{
+							field_value_factor: {
+								field: "votes",
+								modifier: "log1p"
+							}
+						}
+					]
 				}
 			}
 		}
@@ -181,7 +218,7 @@ Current scores for query "quickSort(int, int) int":
 			})
 		}
 	});
- }
+}
 
 // Delete index
 if(DELETE) {
@@ -189,3 +226,4 @@ if(DELETE) {
 		console.log("delete",resp);
 	});
 }
+>>>>>>> 32d9e3d53d5671445dd94944878f22c80b4e7ea8
