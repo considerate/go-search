@@ -8,6 +8,8 @@ var client = new elasticsearch.Client({
     host: 'localhost:9200',
     log: 'trace'
 });
+const DELETE = false;
+const SEARCH = true;
 
 // Create index
 /*client.indices.create({
@@ -131,55 +133,59 @@ Current scores for query "quickSort(int, int) int":
  - mixedSort: 1.0511965
  - wordSort: 0
  */
-client.search({
-    index: 'gosearchindex',
-    type: 'function',
-    body: {
-        query: {
-            function_score: {
-                query: {
-                    bool: {
-                        should: [{
-                            terms: {"object": [], boost: 1}
-                        }, {
-                            terms: {"object_info" : [], boost : 1}
-                        }, {
-                            match: {"name": {query: "quickSort", boost: 5}}
-                        }, {
-                            terms: {"name_parts": ["quick", "sort"], boost: 5}
-                        }, {
-                            terms: {"parameters": ["int", "int"], boost: 2}
-                        }, {
-                            terms: {"parameters_info": ["int", "2"], boost: 2}
-                        }, {
-                            terms: {"result": ["int"], boost: 2}
-                        }, {
-                            terms: {"result_info": ["int", "1"], boost: 2}
-                        }]
-                    }
-                },
-                field_value_factor: {
-                    field: "votes",
-                    modifier: "log1p"
-                }
-            }
-        }
-    }
-},function (error, response,status) {
-    if (error){
-        console.log("search error: "+error)
-    }
-    else {
-        console.log("--- Response ---");
-        console.log(response);
-        console.log("--- Hits ---");
-        response.hits.hits.forEach(function(hit){
-            console.log(hit);
-        })
-    }
-});
+ if(SEARCH) {
+	client.search({
+		index: 'gosearchindex',
+		type: 'function',
+		body: {
+			query: {
+				function_score: {
+					query: {
+						bool: {
+							should: [{
+								terms: {"object": [], boost: 1}
+							}, {
+								terms: {"object_info" : [], boost : 1}
+							}, {
+								match: {"name": {query: "quickSort", boost: 5}}
+							}, {
+								terms: {"name_parts": ["quick", "sort"], boost: 5}
+							}, {
+								terms: {"parameters": ["int", "int"], boost: 2}
+							}, {
+								terms: {"parameters_info": ["int", "2"], boost: 2}
+							}, {
+								terms: {"result": ["int"], boost: 2}
+							}, {
+								terms: {"result_info": ["int", "1"], boost: 2}
+							}]
+						}
+					},
+					field_value_factor: {
+						field: "votes",
+						modifier: "log1p"
+					}
+				}
+			}
+		}
+	},function (error, response,status) {
+		if (error){
+			console.log("search error: "+error)
+		}
+		else {
+			console.log("--- Response ---");
+			console.log(response);
+			console.log("--- Hits ---");
+			response.hits.hits.forEach(function(hit){
+				console.log(hit);
+			})
+		}
+	});
+ }
 
 // Delete index
-client.indices.delete({index: 'gosearchindex'},function(err,resp,status) {
-    console.log("delete",resp);
-});
+if(DELETE) {
+	client.indices.delete({index: 'gosearchindex'},function(err,resp,status) {
+		console.log("delete",resp);
+	});
+}
