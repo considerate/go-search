@@ -3,6 +3,11 @@ const walk = require('walk');
 const filepath = './files';
 const fspath = require('path');
 const fs = require('fs');
+const elasticsearch = require('elasticsearch');
+const esClient = new elasticsearch.Client({
+			host: 'localhost:9200',
+			log: 'trace'
+		});
 
 function tokenize(_, dirPath, dirs, files) {
     return Promise.all(files.map(tokenizeFile));
@@ -28,7 +33,7 @@ function walkFiles(filepath, url) {
                     return func;
                 });
                 documents[filename] = withUrls;
-                console.log(JSON.stringify(withUrls));
+                //console.log(JSON.stringify(withUrls));
             }).catch(error => {
                 console.log(error);
             })
@@ -44,6 +49,7 @@ function walkFiles(filepath, url) {
         });
     });
 }
+
 const readFile = (file) => new Promise((resolve, reject) =>
      fs.readFile(file, (err, data) => err ? reject(err) : resolve(data)));
 
@@ -63,14 +69,31 @@ const addBase = (base) => (file) => [base, file].join('/');
 readDir('./links')
 .then(files => {
     console.log(files);
-    const allLinks = Promise.all(files.map(addBase('./links')).map(readJson))
+    const allLinks = Promise.all(files.map(addBase('./links')).map(readJson));
     return allLinks.then(mergeObjects)
     .then(links => {
         const ids = Object.keys(links);
         return Promise.all(ids.map(id => {
             const directory = [filepath, id].join('/');
             const url = links[id];
-            return walkFiles(directory, url);
+			const processed = walkFiles(directory, url);
+			processed.then(
+				data => {
+					for(var key in data) {
+						console.log("*File: " + key);
+						for(var i = 0; i < data[key].size; ++i) {
+							let out_stats = {};
+							data[key].get(i).parameters.forEach(arr => {
+																	if(out_stats[arr[2]] == 'undefined') out_stats[arr[2] = 1;
+																	else ++out_stats[arr[2]];
+																});
+							esClient.index({index: 'names', type: 'string', body: {identifier: key, url: data[key].get(i).uri}}, (err, resp) => { console.log(err); });
+							console.log("	" + data[key].get(i).name + ": " + data[key].get(i).parameters + " / " + data[key].get(i).result + " @ " + data[key].get(i).uri);
+						}
+					}
+				}
+			);
+            //return 
         }));
     });
 });
@@ -80,12 +103,6 @@ const search = function search(index, body) {
 };
 
 /*
-var elasticsearch = require('elasticsearch');
-
-var client = new elasticsearch.Client({
-    host: 'localhost:9200',
-    log: 'trace'
-});
 
 function searchIndex() {
     let body = {
