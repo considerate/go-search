@@ -82,11 +82,6 @@ readDir('./links')
 					for(var key in data) {
 						console.log("*File: " + key);
 						for(var i = 0; i < data[key].size; ++i) {
-							let out_stats = {};
-							data[key].get(i).parameters.forEach(arr => {
-																	if(out_stats[arr[2]] == 'undefined') out_stats[arr[2] = 1;
-																	else ++out_stats[arr[2]];
-																});
 							esClient.index({index: 'names', type: 'string', body: {identifier: key, url: data[key].get(i).uri}}, (err, resp) => { console.log(err); });
 							console.log("	" + data[key].get(i).name + ": " + data[key].get(i).parameters + " / " + data[key].get(i).result + " @ " + data[key].get(i).uri);
 						}
