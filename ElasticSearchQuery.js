@@ -28,9 +28,13 @@ client.index({
     type: 'function',
     body: {
         "object": [["s", "SortService"]],
+        "object_info" : [["SortService", "1"]],
         "name" : "quickSort1",
+        "name_parts" : ["quick", "sort", "1"],
         "parameters" : [["x", "int"], ["y", "int"]],
+        "parameters_info" : [["int", "2"]],
         "result" : [["first", "int"], ["second", "int"]],
+        "result_info" : [["int", "2"]],
         "uri" : "https:\/\/api.github.com\/quickSort",
         "votes" : 7
     }
@@ -44,9 +48,13 @@ client.index({
     type: 'function',
     body: {
         "object": [["s", "SortService"]],
+        "object_info" : [["SortService", "1"]],
         "name" : "bogoSort",
+        "name_parts" : ["bogo", "sort"],
         "parameters" : [["x", "int"], ["y", "int"]],
+        "parameters_info" : [["int", "2"]],
         "result" : [["first", "int"], ["second", "int"]],
+        "result_info" : [["int", "2"]],
         "uri" : "https:\/\/api.github.com\/bogoSort",
         "votes" : 1
     }
@@ -60,9 +68,13 @@ client.index({
     type: 'function',
     body: {
         "object": [["s", "SortService"]],
+        "object_info" : [["SortService", "1"]],
         "name" : "quickSort2",
+        "name_parts" : ["quick", "sort", "2"],
         "parameters" : [["x", "int"], ["y", "int"], ["z", "int"]],
+        "parameters_info" : [["int", "3"]],
         "result" : [["first", "int"], ["second", "int"], [["third", "int"]]],
+        "result_info" : [["int", "3"]],
         "uri" : "https:\/\/api.github.com\/quickSort",
         "votes" : 5
     }
@@ -76,9 +88,13 @@ client.index({
     type: 'function',
     body: {
         "object": [["s", "SortService"]],
+        "object_info" : [["SortService", "1"]],
         "name" : "wordSort",
+        "name_parts" : ["word", "sort"],
         "parameters" : [["x", "String"], ["y", "String"]],
+        "parameters_info" : [["String", "2"]],
         "result" : [["first", "String"], ["second", "String"]],
+        "result_info" : [["String", "2"]],
         "uri" : "https:\/\/api.github.com\/wordSort",
         "votes" : 3
     }
@@ -92,9 +108,13 @@ client.index({
     type: 'function',
     body: {
         "object": [["s", "SortService"]],
+        "object_info" : [["SortService", "1"]],
         "name" : "mixedSort",
+        "name_parts" : ["mixed", "sort"],
         "parameters" : [["x", "int"], ["y", "int"], ["z", "String"]],
+        "parameters_info" : [["int", "2"], ["String", 1]],
         "result" : [["first", "object"], ["second", "object"], ["third", "object"]],
+        "result_info" : [["object", "3"]],
         "uri" : "https:\/\/api.github.com\/mixedSort",
         "votes" : 4
     }
@@ -122,11 +142,19 @@ client.search({
                         should: [{
                             terms: {"object": [], boost: 1}
                         }, {
-                            match: {"name": {query: "quickSort*", boost: 5}}
+                            terms: {"object_info" : [], boost : 1}
+                        }, {
+                            match: {"name": {query: "quickSort", boost: 5}}
+                        }, {
+                            terms: {"name_parts": ["quick", "sort"], boost: 5}
                         }, {
                             terms: {"parameters": ["int", "int"], boost: 2}
                         }, {
+                            terms: {"parameters_info": ["int", "2"], boost: 2}
+                        }, {
                             terms: {"result": ["int"], boost: 2}
+                        }, {
+                            terms: {"result_info": ["int", "1"], boost: 2}
                         }]
                     }
                 },
