@@ -10,7 +10,7 @@ var client = new elasticsearch.Client({
 });
 
 // Create index
-client.indices.create({
+/*client.indices.create({
     index: 'gosearchindex'
 },function(err,resp,status) {
     if(err) {
@@ -180,6 +180,6 @@ client.search({
 });
 
 // Delete index
-/*client.indices.delete({index: 'gosearchindex'},function(err,resp,status) {
+client.indices.delete({index: 'gosearchindex'},function(err,resp,status) {
     console.log("delete",resp);
-});*/
+});

@@ -141,9 +141,9 @@ function parseResult(tokens) {
     }
     try {
         [tokens, type] = parseType(tokens);
-        return [tokens, List(['var', type])];
+        return [tokens, List([List(['var', type])])];
     } catch (e) {
-        return [tokens, List(['var', 'void'])];
+        return [tokens, List([List(['var', 'void'])])];
     }
 }
 
@@ -205,6 +205,8 @@ function parseTokens(tokens) {
         [tokens2, parameters] = parseParameters(tokens);
 		parameters_info = getTypeInfo(parameters);
         [tokens3, result] = parseResult(tokens2);
+		console.error("Result: " + result);
+		console.error(result);
 		result_info = getTypeInfo(result);
         return [tokens3, {
             parameters,
@@ -271,8 +273,9 @@ function getTypeInfo(arr) {
 	info = {};
 	ret = [];
 	arr.forEach(subArr => { info[subArr.get(1)] !== undefined ? ++info[subArr.get(1)]: info[subArr.get(1)] = 1;});
-	Object.keys(info).forEach(key => { ret.push([key, info[key]]); });
-	return ret;
+	//Object.keys(info).forEach(key => { ret.push([key, String(info[key])]); });
+	//return ret;
+	return info;
 }
 
 function tokenizeStream(stream) {

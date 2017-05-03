@@ -6,7 +6,8 @@ const fs = require('fs');
 const elasticsearch = require('elasticsearch');
 const esClient = new elasticsearch.Client({
 			host: 'localhost:9200',
-			log: 'trace'
+			//log: 'trace'
+			log: 'error'
 		});
 
 function tokenize(_, dirPath, dirs, files) {
@@ -82,7 +83,15 @@ readDir('./links')
 					for(var key in data) {
 						console.log("*File: " + key);
 						for(var i = 0; i < data[key].size; ++i) {
-							esClient.index({index: 'names', type: 'string', body: {identifier: key, url: data[key].get(i).uri}}, (err, resp) => { console.log(err); });
+							let post = data[key].get(i);
+							//console.log(post);
+							post.votes = 4;
+							esClient.index({index: 'gosearchindex', 
+											type: 'function', 
+											body: post
+											},
+											(err, resp) => {  }
+											);
 							console.log("	" + data[key].get(i).name + ": " + data[key].get(i).parameters + " / " + data[key].get(i).result + " @ " + data[key].get(i).uri);
 						}
 					}
