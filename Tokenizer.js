@@ -270,11 +270,12 @@ function getStringParts(name) {
 }
 
 function getTypeInfo(arr) {
-	info = {};
-	ret = [];
+	let info = {};
+	let ret = [];
 	arr.forEach(subArr => { info[subArr.get(1)] !== undefined ? ++info[subArr.get(1)]: info[subArr.get(1)] = 1;});
 	//Object.keys(info).forEach(key => { ret.push([key, String(info[key])]); });
 	//return ret;
+	info.__sz = arr.size();
 	return info;
 }
 
