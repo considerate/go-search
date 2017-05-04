@@ -226,4 +226,3 @@ if(DELETE) {
 		console.log("delete",resp);
 	});
 }
->>>>>>> 32d9e3d53d5671445dd94944878f22c80b4e7ea8
