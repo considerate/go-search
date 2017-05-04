@@ -129,6 +129,24 @@ if(ADD) {
 }
 
 // Query index
+/*
+    The script sums up the discrepancies between the query and a doc. Logarithm is used to dampen the effect when
+    large number of parameters are different. This score is inverted in order to get a similarity score. +2 is used
+    to avoid division by 0.
+    Sample cases for parameter matching:
+     - Identical amount of parameters:
+        Query for {int: 1, String: 1} when doc is {int: 1, String: 1}
+        Result: nonmatch = 0, additional = 0, returns 1/log(0+0+2) = 3.3
+     - Different amount of parameters:
+        Query for {int: 2, String: 1} when doc is {int: 1, String: 1}
+        Result: nonmatch = 1, additional = 0, returns 1/log(1+0+2) = 2.1
+     - Query has more parameters than doc:
+        Query for {int: 1, String: 1, float: 1} when doc is {int: 1, String: 1}
+        Result: nonmatch = 1 (increased in catch), additional = 0, returns 1/log(1+0+2) = 2.1
+     - Query has less parameters than doc:
+        Query for {int: 1} when doc is {int: 1, String: 1}
+        Result: nonmatch = 0, additional = 1, returns 1/log(1+0+2) = 2.1
+ */
  if(SEARCH) {
 	client.search({
 		index: 'gosearchindex',
@@ -155,19 +173,15 @@ if(ADD) {
 						{
 							script_score: {
 								script: {
-									inline: "int p = 0;" +
-											"int useful = 0;" +
-											//"for(int i = 0; i < doc['parameters_info.int'].length; i++) {" +
-											//"   p++;" +
-											//"}" +
-											//"if(doc['parameters_info.float'] == true) ++p" +
-											"try {" +
-												"p = (int) doc['parameters_info.int'][0];" +
-												"useful += p; " +
-											"} catch (Exception e) {}" +
-											"p = (int) doc['parameters_info.__sz'].value;" +
-											"return Float.max(0.5f, ((float) useful) / ((float) p));"
-											//"return p;"
+									inline: "int nonmatch = 0;" +
+											"int additional = (int) doc['parameters_info.__sz'].value;" +
+                                            "try {" +
+                                            "   nonmatch += (int) Math.abs(doc['parameters_info.int'][0] - 2);" +
+                                            "   additional -= doc['parameters_info.int'][0];" +
+                                            "} catch (Exception e) {" +
+                                            "   nonmatch += 2" +
+                                            "}" +
+											"return 1 / Math.log(nonmatch + additional + 2);"
 								}
 							}
 						},
