@@ -272,10 +272,11 @@ function getStringParts(name) {
 function getTypeInfo(arr) {
 	let info = {};
 	let ret = [];
-	arr.forEach(subArr => { info[subArr.get(1)] !== undefined ? ++info[subArr.get(1)]: info[subArr.get(1)] = 1;});
+	let paramCount = 0
+	arr.forEach(subArr => { info[subArr.get(1)] !== undefined ? ++info[subArr.get(1)]: info[subArr.get(1)] = 1; paramCount++});
 	//Object.keys(info).forEach(key => { ret.push([key, String(info[key])]); });
 	//return ret;
-	info.__sz = arr.size();
+	info.__sz = paramCount;
 	return info;
 }
 
