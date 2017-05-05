@@ -1,0 +1,82 @@
+<html>
+	<body style="text-align: center; background-color: #beedf4">
+		<img src="goheader.png" style="width: 40%">
+		<div style="background-color: #6ad7e5; width: 90%; margin: auto; border: 4px solid black; border-radius: 20px">
+			<div style="padding: 20px; line-height: 40px">
+				<input type="text" id="searchField" name="search" style="width: 100%; color: #13626c; font-size: 40px; padding: 5px; height: 70px; border-radius: 10px; background-color: #a8e7f0; border: 2px solid #13626c">
+			</div>
+			<div style="padding: 20px; padding-top: 0px">
+				<button id="searchButton" style="cursor: pointer; background-color: #a8e7f0; font-size: 20px; border: 2px solid #13626c; width: 25%; height: 40px; border-radius: 10px">Go search!</button>
+			</div>
+		</div>
+		
+		<div id="results" style="color: #13626c;  background-color: #6ad7e5; width: 90%; padding: 10px 0px; margin: auto; margin-top: 20px; margin-bottom: 20px;  border: 4px solid black; border-radius: 20px">
+			<div style="border-radius: 10px; background-color: #a8e7f0; border: 2px solid #13626c; padding: 10px; text-align: left; margin: 10px 20px; font-size: 2em">
+				<p style="margin: 0px; padding: 0px">1. read(x int, y double, str string, ) string</p>
+				<a style="color: #13626c" href="www.github.com">www.github.com/yadayadayad/yadayadyada</a>
+			</div>
+			<div style="border-radius: 10px; background-color: #a8e7f0; border: 2px solid #13626c; padding: 10px; text-align: left; margin: 10px 20px; font-size: 2em">
+				<p style="margin: 0px; padding: 0px">2. write(offset int, length double, )</p>
+				<a style="color: #13626c" href="www.github.com">www.github.com/yadayadayad/yadayadyada</a>
+			</div>
+		</div>
+		
+		<div style="font-size: 0.75em; text-align: center; color: #13626c; width: 90%; padding: 10px 0px; margin: auto; margin-top: 20px; margin-bottom: 20px">
+			A project for DH2642<br>&copy 2017
+		</div>
+		<script>
+			var searchContent = "r"; // last search string
+			var results = []; // search results
+			
+			// grabs the text from the search field and performs a search if necessary and then stages the results
+			function loadResults() {
+				var newSearch = document.getElementById("searchField").value;
+				if(newSearch != searchContent) {
+					searchContent = newSearch;
+					if(newSearch != "") {
+						var xhttp = new XMLHttpRequest();
+						xhttp.onreadystatechange = function() {
+							if (this.readyState == 4 && this.status == 200) {
+								// Typical action to be performed when the document is ready:
+								results = JSON.parse(xhttp.responseText);
+								setContent;
+							}
+						};
+						xhttp.open("GET", "http://search.considerate.se/?q=" + newSearch, true);
+						xhttp.send();
+					}
+					else {
+						results = [];
+						setContent();
+					}
+				}
+			}
+			
+			// sets the contents of the search results, if any query has been entered
+			function setContent() {
+				if(searchContent != "") {
+					//if(results.length > 0) {
+					//}
+					document.getElementById("results").style.display = "block";
+				}
+				else document.getElementById("results").style.display = "none";
+			}
+			
+			// catch enter keys from search field and click button if one occurs
+			function enterKey(event) { 
+				event.preventDefault();
+				if (event.keyCode == 13) document.getElementById("searchButton").click();
+			}
+			
+			setContent();
+			//document.getElementById("searchButton").addEventListener('click', loadResults);
+			document.getElementById("searchButton").addEventListener('mouseover', function() { this.style.backgroundColor = "#13626c"; });
+			document.getElementById("searchButton").addEventListener('mouseout', function() { this.style.backgroundColor = "#a8e7f0"; });
+			document.getElementById("searchButton").addEventListener('mousedown', function() { this.style.backgroundColor = "black"; });
+			document.getElementById("searchButton").addEventListener('mouseup', function() { this.style.backgroundColor = "#13626c"; });
+			//document.getElementById("searchField").addEventListener("keyup", enterKey);
+		</script>
+	</body>
+	
+</html>
+		
