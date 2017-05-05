@@ -37,41 +37,43 @@ app.get('/', function(req, res) {
         var json = JSON.parse(func)
 
         var scriptString = "int nonmatch = 0;" +
-            "int additional = (int) doc['parameters_info.__sz'].value;"
+            "int additionalObject = (int) doc['object_info.__sz'].value;"
         for (var key in json[0].object_info) {
             if (json[0].object_info.hasOwnProperty(key) && key != '__sz') {
                 scriptString +=
                     "try {" +
-                    "   nonmatch += (int) Math.abs(doc['parameters_info." + key + "'][0] - " + json[0].object_info[key] + ");" +
-                    "   additional -= doc['parameters_info." + key + "'][0];" +
+                    "   nonmatch += (int) Math.abs(doc['object_info." + key + "'][0] - " + json[0].object_info[key] + ");" +
+                    "   additionalObject -= doc['object_info." + key + "'][0];" +
                     "} catch (Exception e) {" +
                     "   nonmatch += " + json[0].object_info[key] +
                     "}"
             }
         }
+        scriptString += "int additionalParam = (int) doc['parameters_info.__sz'].value;"
         for (var key in json[0].parameters_info) {
             if (json[0].parameters_info.hasOwnProperty(key) && key != '__sz') {
                 scriptString +=
                     "try {" +
                     "   nonmatch += (int) Math.abs(doc['parameters_info." + key + "'][0] - " + json[0].parameters_info[key] + ");" +
-                    "   additional -= doc['parameters_info." + key + "'][0];" +
+                    "   additionalParam -= doc['parameters_info." + key + "'][0];" +
                     "} catch (Exception e) {" +
                     "   nonmatch += " + json[0].parameters_info[key] +
                     "}"
             }
         }
+        scriptString += "int additionalResult = (int) doc['result_info.__sz'].value;"
         for (var key in json[0].result_info) {
             if (json[0].result_info.hasOwnProperty(key) && key != '__sz') {
                 scriptString +=
                     "try {" +
-                    "   nonmatch += (int) Math.abs(doc['parameters_info." + key + "'][0] - " + json[0].result_info[key] + ");" +
-                    "   additional -= doc['parameters_info." + key + "'][0];" +
+                    "   nonmatch += (int) Math.abs(doc['result_info." + key + "'][0] - " + json[0].result_info[key] + ");" +
+                    "   additionalResult -= doc['result_info." + key + "'][0];" +
                     "} catch (Exception e) {" +
                     "   nonmatch += " + json[0].result_info[key] +
                     "}"
             }
         }
-        scriptString += "return 1 / Math.log(nonmatch + additional + 2);"
+        scriptString += "return 1 / Math.log(nonmatch + additionalObject + additionalParam + additionalResult + 2);"
 
         console.log(scriptString)
 
