@@ -32,6 +32,7 @@ const context = {
 app.get('/', function(req, res) {
     const query = req.query.q;
     //TODO: replace mocked context with results from elasticsearch
+    var output = []
     tokenizeString(query).then(function(result) {
         var func = JSON.stringify(result)
         var json = JSON.parse(func)
@@ -126,14 +127,17 @@ app.get('/', function(req, res) {
                 console.log("--- Hits ---");
                 response.hits.hits.forEach(function(hit){
                     console.log(hit);
+                    output.push([hit._score + " " + hit._source.name])
                 })
             }
         });
     })
-    const results = context.results
-        .filter(r => (r.name || '').indexOf(query) != -1);
+
     res.render('index', {
-        results,
+        results : [
+            {
+                "arguments": output
+            }]
     });
 });
 
