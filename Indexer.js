@@ -67,7 +67,31 @@ const mergeObjects = (objects) => {
 
 const addBase = (base) => (file) => [base, file].join('/');
 
-readDir('./links')
+/**
+ * Put a tokenized file into the index
+ */
+const indexTokenizedFiles = (files) => {
+    return Promise.all( Object.keys(files).map((filename) => {
+        const posts = files[filename]; // posts are the tokenized functions
+        return Promise.all( posts.map( (post) => {
+            return new Promise( (resolve, reject) => {
+                post.votes = 4;
+                console.log(post);
+                esClient.index(
+                    {index: 'gosearchindex',
+                    type: 'function',
+                    body: post,
+                    },
+                    (err, resp) => {} // Ignore if insert did not succeed
+                );
+                resolve();
+            });
+        }));
+    }));
+};
+
+
+const documentsList = readDir('./links')
 .then(files => {
     console.log(files);
     const allLinks = Promise.all(files.map(addBase('./links')).map(readJson));
@@ -77,30 +101,25 @@ readDir('./links')
         return Promise.all(ids.map(id => {
             const directory = [filepath, id].join('/');
             const url = links[id];
-			const processed = walkFiles(directory, url);
-			processed.then(
-				data => {
-					for(var key in data) {
-						console.log("*File: " + key);
-						for(var i = 0; i < data[key].size; ++i) {
-							let post = data[key].get(i);
-							//console.log(post);
-							post.votes = 4;
-							esClient.index({index: 'gosearchindex', 
-											type: 'function', 
-											body: post
-											},
-											(err, resp) => {  }
-											);
-							console.log("	" + data[key].get(i).name + ": " + data[key].get(i).parameters + " / " + data[key].get(i).result + " @ " + data[key].get(i).uri);
-						}
-					}
-				}
-			);
-            //return 
+            return walkFiles(directory, url).then( (files) => {
+                // This should maybe not be done here, as this 
+                // should rather return a promise that has read files
+                // not inserted to index yet
+                // but as writted below, I get too many files open error
+                // if waiting
+                return indexTokenizedFiles(files);
+            });
         }));
     });
 });
+
+// When trying to do inserts this way, I get too many open files error
+//documentsList.then( (tokenizedFilesList) => {
+ //   return Promise.all(tokenizedFilesList.map( (tokenizedFiles) => {
+  //      return indexTokenizedFiles(tokenizedFiles);
+   // }));
+//});
+
 
 const search = function search(index, body) {
     return client.search({index: index, body: body});
