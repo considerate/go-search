@@ -10,8 +10,8 @@ var client = new elasticsearch.Client({
 });
 
 const DELETE = false;
-const SEARCH = true;
-const ADD = false;
+const SEARCH = false;
+const ADD = true;
 
 if(ADD) {
 	// Create index
@@ -126,6 +126,78 @@ if(ADD) {
 	},function(err,resp,status) {
 		console.log(resp);
 	});
+
+    client.index({
+        index: 'gosearchindex',
+        id: '6',
+        type: 'function',
+        body: {
+            "name" : "paramTest1",
+            "name_parts" : ["param", "test"],
+            "parameters" : [["x", "int"]],
+            "parameters_info" : {"__sz" : 1, "int" : 1},
+            "result" : [["var", "void"]],
+            "result_info" : {"__sz" : 1, "void" : 1},
+            "uri" : "https:\/\/api.github.com\/paramTest1",
+            "votes" : 4
+        }
+    },function(err,resp,status) {
+        console.log(resp);
+    });
+
+    client.index({
+        index: 'gosearchindex',
+        id: '7',
+        type: 'function',
+        body: {
+            "name" : "paramTest2",
+            "name_parts" : ["param", "test"],
+            "parameters" : [["x", "int"], ["y", "int"]],
+            "parameters_info" : {"__sz" : 2, "int" : 2},
+            "result" : [["var", "void"]],
+            "result_info" : {"__sz" : 1, "void" : 1},
+            "uri" : "https:\/\/api.github.com\/paramTest2",
+            "votes" : 4
+        }
+    },function(err,resp,status) {
+        console.log(resp);
+    });
+
+    client.index({
+        index: 'gosearchindex',
+        id: '8',
+        type: 'function',
+        body: {
+            "name" : "paramTest3",
+            "name_parts" : ["param", "test"],
+            "parameters" : [["x", "int"], ["y", "int"], ["z", "int"]],
+            "parameters_info" : {"__sz" : 3, "int" : 3},
+            "result" : [["var", "void"]],
+            "result_info" : {"__sz" : 1, "void" : 1},
+            "uri" : "https:\/\/api.github.com\/paramTest3",
+            "votes" : 4
+        }
+    },function(err,resp,status) {
+        console.log(resp);
+    });
+
+    client.index({
+        index: 'gosearchindex',
+        id: '9',
+        type: 'function',
+        body: {
+            "name" : "paramTest4",
+            "name_parts" : ["param", "test"],
+            "parameters" : [["x", "int"], ["y", "int"], ["z", "String"]],
+            "parameters_info" : {"__sz" : 3, "int" : 2, "String" : 1},
+            "result" : [["var", "void"]],
+            "result_info" : {"__sz" : 1, "void" : 1},
+            "uri" : "https:\/\/api.github.com\/paramTest4",
+            "votes" : 4
+        }
+    },function(err,resp,status) {
+        console.log(resp);
+    });
 }
 
 // Query index

@@ -15,7 +15,7 @@ app.set('view engine', 'html');
 app.set('view engine', 'hbs');
 app.set('views', __dirname + '/views')
 
-const context = {
+/*const context = {
     results: [
     {
         "name": "read",
@@ -28,7 +28,7 @@ const context = {
         "returns": ""
     },
     ],
-};
+};*/
 app.get('/', function(req, res) {
     const query = req.query.q;
     //TODO: replace mocked context with results from elasticsearch
@@ -80,6 +80,7 @@ app.get('/', function(req, res) {
 
         client.search({
             index: 'gosearchindex',
+            search_type: 'dfs_query_then_fetch',
             type: 'function',
             body: {
                 query: {
