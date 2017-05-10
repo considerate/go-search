@@ -158,7 +158,7 @@ function run(language){
 
     // extract the relevant info from repo object
     function getUrlMaps(repos) {
-        return repos.map(repo => [repo.id, repo.url, repo.watchers, repo.forks]);
+        return repos.map(repo => [repo.id, repo.html_url, repo.watchers, repo.forks]);
     }
 
     // Fetch all repositories recursively

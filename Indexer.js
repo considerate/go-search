@@ -27,7 +27,7 @@ function walkFiles(filepath, repo_info) {
             const path = [directory, filename].join('/');
             const relative = fspath.relative(filepath, path);
             // assume files are in folders
-            const fileuri = repo_info.url + relative.substring(relative.indexOf('/'));
+            const fileuri = repo_info.url + '/blob/master' + relative.substring(relative.indexOf('/'));
             tokenizeFile(path).then(result => {
                 const withUrls = result.map(func => {
                     func.uri = fileuri;
@@ -84,6 +84,7 @@ const indexTokenizedFiles = (files) => {
             const id = undefined;
             ops.push({index: {_index: 'gosearchindex', _type: 'function'}});
             ops.push(post);
+            console.log(post);
         });
         return new Promise((resolve) => {
             esClient.bulk({
