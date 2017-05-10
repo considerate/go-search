@@ -1,130 +1,125 @@
 <html>
-	<head>
-		<link rel="stylesheet" type="text/css" href="style.css">
-	</head>
-	<body>
-		<img src="goheader.png" id="header">
-		<div id="topDiv" style="">
-			<div id="upper">
-				<input type="text" id="searchField" name="search">
-			</div>
-			<div id="lower">
-				<button id="searchButton">Go search!</button>
-			</div>
-		</div>
-		
-		<div id="results">
-			<div>
-				<p>1. read(x int, y double, str string, ) string</p>
-				<a href="www.github.com">www.github.com/yadayadayad/yadayadyada</a>
-			</div>
-			<div>
-				<p>2. write(offset int, length double, )</p>
-				<a href="www.github.com">www.github.com/yadayadayad/yadayadyada</a>
-			</div>
-		</div>
-		
-		<div id="footer">
-			A project for DH2642<br>&copy 2017
-		</div>
-		<script>
-			var searchContent = ""; // last search string
-			var results = []; // search results
-			
-			// grabs the text from the search field and performs a search if necessary and then stages the results
-			function loadResults() {
-				var newSearch = document.getElementById("searchField").value;
-				if(newSearch != searchContent) {
-					searchContent = newSearch;
-					if(newSearch != "") {
-						var xhttp = new XMLHttpRequest();
-						xhttp.onreadystatechange = function() {
-							if (this.readyState == 4 && this.status == 200) {
-								// Typical action to be performed when the document is ready:
-								console.log(xhttp.responseText);
-								results = JSON.parse(xhttp.responseText).results;
-								setContent();
-							}
-						};
-						//xhttp.open("GET", "http://search.considerate.se/?q=" + newSearch, true);
-						xhttp.open("GET", "http://localhost:3000/search?q=" + newSearch, true);
-						xhttp.send();
-					}
-					else {
-						results = [];
-						setContent();
-					}
-				}
-			}
-			
-			function getResultBlock(resultNo, name, objects, parameters, returns, link) {
-				string = "";
-				if(objects.length > 0) {
-					string += "(";
-					for(var i = 0; i < objects.length; ++i) {
-						if(i > 0) string += ", ";
-						string += objects[i][0] + " ";
-						string += objects[i][1];
-					}
-					string += ") ";
-				}
-				string += name;
-				string += "(";
-				if(parameters.length > 0) {
-					for(var i = 0; i < parameters.length; ++i) {
-						if(i > 0) string += ", ";
-						string += parameters[i][0] + " ";
-						string += parameters[i][1];
-					}	
-				}
-				string += ") ";
-				if(returns.length > 0) {
-					string += "(";
-					for(var i = 0; i < returns.length; ++i) {
-						if(i > 0) string += ", ";
-						string += returns[i][0] + " ";
-						string += returns[i][1];
-					}
-					string += ") ";
-				}
-				return '<div><p>' + resultNo + '. ' + string + '</p><a href="' + link + '">' + link + '</a></div>';
-			}
-			
-			// sets the contents of the search results, if any query has been entered
-			function setContent() {
-				if(searchContent != "") {
-					document.getElementById("results").innerHTML = "";
-					res = "";
-					console.log(results);
-					for(var i = 0; i < results.length; ++i) {
-						res += getResultBlock(i, results[i].name || '', results[i].object || [], results[i].parameters || [], results[i].result || [], results[i].uri || '');
-					}
-					document.getElementById("results").innerHTML = res;
-					document.getElementById("results").style.display = "block";
-					if(results.length === 0) document.getElementById("results").innerHTML = '<p id="error">NO results, please try again...</p>';
-					
-				}
-				else document.getElementById("results").style.display = "none";
-			}
-			
-			// catch enter keys from search field and click button if one occurs
-			function enterKey(event) { 
-				event.preventDefault();
-				if (event.keyCode == 13) {
-					document.getElementById("searchButton").click();
-					document.getElementById("searchField").blur();
-				}
-			}
-			
-			setContent();
-			document.getElementById("searchButton").addEventListener('click', loadResults);
-			document.getElementById("searchButton").addEventListener('mouseover', function() { this.style.backgroundColor = "#13626c"; });
-			document.getElementById("searchButton").addEventListener('mouseout', function() { this.style.backgroundColor = "#a8e7f0"; });
-			document.getElementById("searchButton").addEventListener('mousedown', function() { this.style.backgroundColor = "black"; });
-			document.getElementById("searchButton").addEventListener('mouseup', function() { this.style.backgroundColor = "#13626c"; });
-			document.getElementById("searchField").addEventListener("keyup", enterKey);
-		</script>
-	</body>
-	
+    <head>
+        <link rel="stylesheet" type="text/css" href="style.css">
+    </head>
+    <body>
+        <img src="goheader.png" id="header" alt="gopher"/>
+        <div id="topDiv" style="">
+            <div id="upper">
+                <input type="search" id="searchField" name="search"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false">
+            </div>
+            <div id="lower">
+                <button id="searchButton">Go search!</button>
+            </div>
+        </div>
+
+        <div id="results">
+        </div>
+
+        <div id="footer">
+            A project for DH2642<br>&copy; 2017
+        </div>
+        <script>
+            var searchContent = ""; // last search string
+            var results = []; // search results
+
+            // grabs the text from the search field and performs a search if necessary and then stages the results
+            function loadResults() {
+                var newSearch = document.getElementById("searchField").value;
+                searchContent = newSearch;
+                if(newSearch != "") {
+                    var xhttp = new XMLHttpRequest();
+                    xhttp.onreadystatechange = function() {
+                        if (this.readyState == 4 && this.status == 200) {
+                            try {
+                                results = JSON.parse(xhttp.responseText).results;
+                                setContent();
+                            } catch (e) {
+                            }
+                        }
+                    };
+                    //xhttp.open("GET", "http://search.considerate.se/?q=" + newSearch, true);
+                    xhttp.open("GET", "http://localhost:3000/search?q=" + newSearch, true);
+                    xhttp.send();
+                }
+                else {
+                    results = [];
+                    setContent();
+                }
+            }
+
+            function getResultBlock(resultNo, name, objects, parameters, returns, link) {
+                string = "";
+                if(objects.length > 0) {
+                    string += "(";
+                    for(var i = 0; i < objects.length; ++i) {
+                        if(i > 0) string += ", ";
+                        string += objects[i][0] + " ";
+                        string += objects[i][1];
+                    }
+                    string += ") ";
+                }
+                string += name;
+                string += "(";
+                if(parameters.length > 0) {
+                    for(var i = 0; i < parameters.length; ++i) {
+                        if(i > 0) string += ", ";
+                        string += parameters[i][0] + " ";
+                        string += parameters[i][1];
+                    }
+                }
+                string += ") ";
+                if(returns.length > 0) {
+                    string += "(";
+                    for(var i = 0; i < returns.length; ++i) {
+                        if(i > 0) string += ", ";
+                        string += returns[i][0] + " ";
+                        string += returns[i][1];
+                    }
+                    string += ") ";
+                }
+                return '<div><p>' + resultNo + '. ' + string + '</p><a href="' + link + '">' + link + '</a></div>';
+            }
+
+            // sets the contents of the search results, if any query has been entered
+            function setContent() {
+                if(searchContent != "") {
+                    document.getElementById("results").innerHTML = "";
+                    res = "";
+                    console.log(results);
+                    for(var i = 0; i < results.length; ++i) {
+                        res += getResultBlock(i, results[i].name || '', results[i].object || [], results[i].parameters || [], results[i].result || [], results[i].uri || '');
+                    }
+                    document.getElementById("results").innerHTML = res;
+                    document.getElementById("results").style.display = "block";
+                    if(results.length === 0) document.getElementById("results").innerHTML = '<p id="error">NO results, please try again...</p>';
+
+                }
+                else document.getElementById("results").style.display = "none";
+            }
+
+            // catch enter keys from search field and click button if one occurs
+            function enterKey(event) {
+                event.preventDefault();
+                if (event.keyCode == 13) {
+                    document.getElementById("searchButton").click();
+                    document.getElementById("searchField").blur();
+                }
+            }
+
+            setContent();
+            document.getElementById("searchButton").addEventListener('click', loadResults);
+            document.getElementById("searchButton").addEventListener('mouseover', function() { this.style.backgroundColor = "#13626c"; });
+            document.getElementById("searchButton").addEventListener('mouseout', function() { this.style.backgroundColor = "#a8e7f0"; });
+            document.getElementById("searchButton").addEventListener('mousedown', function() { this.style.backgroundColor = "black"; });
+            document.getElementById("searchButton").addEventListener('mouseup', function() { this.style.backgroundColor = "#13626c"; });
+            document.getElementById("searchField").addEventListener("keyup", enterKey);
+        </script>
+    </body>
+
 </html>
-		
+
