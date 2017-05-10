@@ -29,7 +29,6 @@ app.get('/search', function(req, res) {
             }
             return json;
         }).then(function(json) {
-            console.log(json);
             const paramTypes = json[0].parameters_info && json[0].parameters_info.types || [];
             const parameterQueries = paramTypes.map((param) => {
                 return {
