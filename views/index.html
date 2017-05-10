@@ -95,8 +95,9 @@
 				if(searchContent != "") {
 					document.getElementById("results").innerHTML = "";
 					res = "";
+					console.log(results);
 					for(var i = 0; i < results.length; ++i) {
-						res += getResultBlock(i, results[i].name, results[i].objects, results[i].arguments, results[i].returns, results[i].link);
+						res += getResultBlock(i, results[i].name || '', results[i].object || [], results[i].parameters || [], results[i].result || [], results[i].uri || '');
 					}
 					document.getElementById("results").innerHTML = res;
 					document.getElementById("results").style.display = "block";

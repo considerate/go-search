@@ -204,6 +204,7 @@ function parseTokens(tokens) {
         if(PRINTOUTS) console.error('    :: anon function');
         [tokens2, parameters] = parseParameters(tokens);
         parameters_info = getTypeInfo(parameters);
+        console.log(parameters);
         [tokens3, result] = parseResult(tokens2);
         if(PRINTOUTS) console.error("Result: " + result);
         if(PRINTOUTS) console.error(result);
@@ -288,7 +289,7 @@ function getTypeInfo(arr) {
             count: typeCounts[type],
         };
     });
-    const total = Array.from(types).reduce((sum, param) => {
+    const total = types.reduce((sum, param) => {
         return sum + param.count;
     }, 0);
     return {types, total};

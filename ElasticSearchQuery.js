@@ -9,207 +9,47 @@ var client = new elasticsearch.Client({
     log: 'trace'
 });
 
-const DELETE = true;
+const DELETE = false;
 const SEARCH = false;
-const ADD = false;
+const ADD = true;
+const CREATE = false;
 
-if(ADD) {
-	// Create index
-	client.indices.create({
-		index: 'gosearchindex',
+if(CREATE) {
+    client.indices.create({
+        index: 'gosearchindex',
         body: {
-		    mappings: {
+            mappings: {
                 function: {
                     properties: {
-                        parameters_info: {
-                            type: "nested"
+                        "result_info": {
+                            properties: {
+                                types: {type: "nested"},
+                                total: {type: "integer"}
+                            },
+                            type: "object"
+                        },
+                        "parameters_info": {
+                            properties: {
+                                types: {type: "nested"},
+                                total: {type: "integer"}
+                            },
+                            type: "object"
                         }
                     }
                 }
             }
         }
-	},function(err,resp,status) {
-		if(err) {
-			console.log(err);
-		}
-		else {
-			console.log("create",resp);
-		}
-	});
-
-/*	// Add documents to index
-	client.index({
-		index: 'gosearchindex',
-		id: '1',
-		type: 'function',
-		body: {
-			"object": [["s", "SortService"]],
-			"object_info" : {"__sz" : 1, "SortService" : 1},
-			"name" : "quickSort1",
-			"name_parts" : ["quick", "sort", "1"],
-			"parameters" : [["x", "int"], ["y", "int"]],
-			"parameters_info" : {"__sz" : 2, "int" : 2},
-			"result" : [["first", "int"], ["second", "int"]],
-			"result_info" : {"__sz" : 2, "int" : 2},
-			"uri" : "https:\/\/api.github.com\/quickSort",
-			"votes" : 7
-		}
-	},function(err,resp,status) {
-		console.log(resp);
-	});
-
-	client.index({
-		index: 'gosearchindex',
-		id: '2',
-		type: 'function',
-		body: {
-			"object": [["s", "SortService"]],
-			"object_info" : {"__sz": 1, "SortService" : 1},
-			"name" : "bogoSort",
-			"name_parts" : ["bogo", "sort"],
-			"parameters" : [["x", "int"], ["y", "int"]],
-			"parameters_info" : {"__sz": 2, "int" : 2},
-			"result" : [["first", "int"], ["second", "int"]],
-			"result_info" : {"__sz": 2, "int" : 2},
-			"uri" : "https:\/\/api.github.com\/bogoSort",
-			"votes" : 1
-		}
-	},function(err,resp,status) {
-		console.log(resp);
-	});
-
-	client.index({
-		index: 'gosearchindex',
-		id: '3',
-		type: 'function',
-		body: {
-			"object": [["s", "SortService"]],
-			"object_info" : {"__sz": 1, "SortService" : 1},
-			"name" : "quickSort2",
-			"name_parts" : ["quick", "sort", "2"],
-			"parameters" : [["x", "int"], ["y", "int"], ["z", "int"]],
-			"parameters_info" : {"__sz": 3, "int" : 3},
-			"result" : [["first", "int"], ["second", "int"], [["third", "int"]]],
-			"result_info" : {"__sz" : 3, "int" : 3},
-			"uri" : "https:\/\/api.github.com\/quickSort",
-			"votes" : 5
-		}
-	},function(err,resp,status) {
-		console.log(resp);
-	});
-
-	client.index({
-		index: 'gosearchindex',
-		id: '4',
-		type: 'function',
-		body: {
-			"object": [["s", "SortService"]],
-			"object_info" : {"__sz" : 1, "SortService" : 1},
-			"name" : "wordSort",
-			"name_parts" : ["word", "sort"],
-			"parameters" : [["x", "String"], ["y", "String"]],
-			"parameters_info" : {"__sz" : 2, "String" : 2},
-			"result" : [["first", "String"], ["second", "String"]],
-			"result_info" : {"__sz" : 2, "String" : "2"},
-			"uri" : "https:\/\/api.github.com\/wordSort",
-			"votes" : 3
-		}
-	},function(err,resp,status) {
-		console.log(resp);
-	});
-
-	client.index({
-		index: 'gosearchindex',
-		id: '5',
-		type: 'function',
-		body: {
-			"object": [["s", "SortService"]],
-			"object_info" : {"__sz" : 1, "SortService" : 1},
-			"name" : "mixedSort",
-			"name_parts" : ["mixed", "sort"],
-			"parameters" : [["x", "int"], ["y", "int"], ["z", "String"]],
-			"parameters_info" : {"__sz" : 3, "int" : 2, "String" : 1},
-			"result" : [["first", "object"], ["second", "object"], ["third", "object"]],
-			"result_info" : {"__sz" : 3, "object" : 3},
-			"uri" : "https:\/\/api.github.com\/mixedSort",
-			"votes" : 4
-		}
-	},function(err,resp,status) {
-		console.log(resp);
-	});
-
-    client.index({
-        index: 'gosearchindex',
-        id: '6',
-        type: 'function',
-        body: {
-            "name" : "paramTest1",
-            "name_parts" : ["param", "test"],
-            "parameters" : [["x", "int"]],
-            "parameters_info" : {"__sz" : 1, "int" : 1},
-            "result" : [["var", "void"]],
-            "result_info" : {"__sz" : 1, "void" : 1},
-            "uri" : "https:\/\/api.github.com\/paramTest1",
-            "votes" : 4
-        }
     },function(err,resp,status) {
-        console.log(resp);
+        if(err) {
+            console.log(err);
+        }
+        else {
+            console.log("create",resp);
+        }
     });
+}
 
-    client.index({
-        index: 'gosearchindex',
-        id: '7',
-        type: 'function',
-        body: {
-            "name" : "paramTest2",
-            "name_parts" : ["param", "test"],
-            "parameters" : [["x", "int"], ["y", "int"]],
-            "parameters_info" : {"__sz" : 2, "int" : 2},
-            "result" : [["var", "void"]],
-            "result_info" : {"__sz" : 1, "void" : 1},
-            "uri" : "https:\/\/api.github.com\/paramTest2",
-            "votes" : 4
-        }
-    },function(err,resp,status) {
-        console.log(resp);
-    });
-
-    client.index({
-        index: 'gosearchindex',
-        id: '8',
-        type: 'function',
-        body: {
-            "name" : "paramTest3",
-            "name_parts" : ["param", "test"],
-            "parameters" : [["x", "int"], ["y", "int"], ["z", "int"]],
-            "parameters_info" : {"__sz" : 3, "int" : 3},
-            "result" : [["var", "void"]],
-            "result_info" : {"__sz" : 1, "void" : 1},
-            "uri" : "https:\/\/api.github.com\/paramTest3",
-            "votes" : 4
-        }
-    },function(err,resp,status) {
-        console.log(resp);
-    });
-
-    client.index({
-        index: 'gosearchindex',
-        id: '9',
-        type: 'function',
-        body: {
-            "name" : "paramTest4",
-            "name_parts" : ["param", "test"],
-            "parameters" : [["x", "int"], ["y", "int"], ["z", "String"]],
-            "parameters_info" : {"__sz" : 3, "int" : 2, "String" : 1},
-            "result" : [["var", "void"]],
-            "result_info" : {"__sz" : 1, "void" : 1},
-            "uri" : "https:\/\/api.github.com\/paramTest4",
-            "votes" : 4
-        }
-    },function(err,resp,status) {
-        console.log(resp);
-    });*/
-
+if(ADD) {
     client.index({
         index: 'gosearchindex',
         id: '6',
@@ -273,7 +113,7 @@ if(ADD) {
             "object_info" : {types: [{"type":"SortService","count":1}], total: 1},
             "name" : "paramTest4",
             "name_parts" : ["param", "test"],
-            "parameters" : [["x", "int"], ["y","int"] ["s", "String"]],
+            "parameters" : [["x", "int"], ["y","int"], ["s", "String"]],
             "parameters_info" : {types: [{"type":"int","count":2},{"type":"String","count":1}], total: 3},
             "result" : [["var", "void"]],
             "result_info" : {types: [{"type":"void","count":1}], total: 1},

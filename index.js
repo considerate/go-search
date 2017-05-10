@@ -15,41 +15,14 @@ app.use(express.static(__dirname + '/views'));
 app.set('view engine', 'html');
 app.set('view engine', 'hbs');
 
-
-const context = {
-    results: [
-    {
-        "name": "read",
-        "arguments": [["x", "int"], ["y", "double"], ["str", "string"]],
-        "returns": ["string"],
-		"objects" : [],
-		"link" : "http://www.github.com"
-    },
-    {
-        "name": "write",
-        "arguments": [["offset", "int"], ["length", "double"]],
-        "returns": [],
-		"objects" : [],
-		"link" : "http://www.github.com"
-    }
-    ]
-};
 app.get('/search', function(req, res) {
-    const query = req.query.q;
-    //TODO: replace mocked context with results from elasticsearch
-<<<<<<< HEAD
-	if(query) {
-		if(false) {
-		var output = []
-		tokenizeString(query).then(function(result) {
-			var func = JSON.stringify(result)
-			var json = JSON.parse(func)
+    const queryString = req.query.q;
+	if(queryString) {
 
-=======
-    var output = []
-    tokenizeString(query).then(function(result) {
-        var func = JSON.stringify(result)
-        var json = JSON.parse(func)
+            tokenizeString(queryString).then(function (result) {
+                var func = JSON.stringify(result)
+                var json = JSON.parse(func)
+                console.log(queryString, json)
 
         //scriptString = "int nonmatch = 0;"
         //scriptString += "for(element in doc['parameters_info.count'].values) {}"
@@ -92,96 +65,68 @@ app.get('/search', function(req, res) {
         }*/
         //scriptString += "return 1 / Math.log(nonmatch + 2);"// + additionalObject + additionalParam + additionalResult);"
 
-        //console.log(scriptString)
->>>>>>> 367972b... Add score adjustment for total number of parameters
-
-        const parameters = [{type: 'int', count: 2},{type: 'String', count: 1}]; // TODO (json[0].parameters_info.types !== undefined ? json[0].parameters_info.types : [])
-
-        const parameterQueries = parameters.map(param => {
-            return {
-                nested: {
-                    path: "parameters_info",
-                    query: {
-                        function_score: {
+                if(!json[0]) {
+                    return res.status(404);
+                }
+                const parameterQueries = json[0].parameters_info.types.map((param) => {
+                    return {
+                        nested: {
+                            path: "parameters_info.types",
                             query: {
-                                match: {"parameters_info.types.type": param.type},
-                            },
-                            gauss: {
-                                "parameters_info.types.count": {
-                                    origin: param.count,
-                                    scale: 1,
+                                function_score: {
+                                    query: {
+                                        match: {"parameters_info.types.type": param.type},
+                                    },
+                                    gauss: {
+                                        "parameters_info.types.count": {
+                                            origin: param.count,
+                                            scale: 1,
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            }
-        });
+                });
 
-        const query = {
-            index: 'gosearchindex',
-            search_type: 'dfs_query_then_fetch',
-            type: 'function',
-            body: {
-                query: {
-                    function_score: {
+                const query = {
+                    index: 'gosearchindex',
+                    search_type: 'dfs_query_then_fetch',
+                    type: 'function',
+                    body: {
                         query: {
-                            bool: {
-                                should: parameterQueries.concat([{
-                                    terms: {
-                                        "name_parts": (json[0].name_parts !== undefined ? json[0].name_parts : []),
-                                        boost: 5
-                                    }
-                                }].concat([{
-                                    nested: {
-                                        path: "parameters_info",
-                                        query: {
-                                            function_score: {
-                                                gauss: {
-                                                    "parameters_info.total": {
-                                                        origin: 3, // TODO (json[0].parameters_info.total !== undefined ? 0)
-                                                        scale: 1,
-                                                    }
-                                                }
+                            function_score: {
+                                query: {
+                                    bool: {
+                                        should: parameterQueries.concat([{
+                                            terms: {
+                                                "name_parts": (json[0].name_parts !== undefined ? json[0].name_parts : []),
+                                                boost: 5
                                             }
-                                        }
+                                        }]/*.concat([{
+
+                                                    function_score: {
+                                                        gauss: {
+                                                            "parameters_info.total": {
+                                                                origin: (json[0].parameters_info.total || 0),
+                                                                scale: 1,
+                                                            }
+                                                        }
+                                                    }
+
+                                        }])*/)
                                     }
-                                }]))
+                                },
+                                functions: [{
+                                    field_value_factor: {
+                                        field: "votes",
+                                        modifier: "log1p"
+                                    }
+                                }]
                             }
-                        },
-                        functions: [{
-                            field_value_factor: {
-                                field: "votes",
-                                modifier: "log1p"
-                             }
-                        }]
-                    }
-                }
-            }
-        }
-        /*
-        {
-            index: 'gosearchindex',
-                search_type: 'dfs_query_then_fetch',
-            type: 'function',
-            body: {
-            query: {
-                function_score: {
-                    query: {
-                        bool: {
-                            should: parameterQueries/*([ {
-                             //    terms: {"object": (json[0].object !== undefined ? json[0].object[0] : []), boost: 1}
-                             //}, {
-                             //    match: {"name": {query: (json[0].name !== undefined ? json[0].name : []), boost: 5}}
-                             //}, {
-                             //terms: {"name_parts": (json[0].name_parts !== undefined ? json[0].name_parts : []), boost: 5}
-                             //}, {
-                             //    terms: {"parameters": (json[0].parameters !== undefined ? json[0].parameters[0] : []), boost: 2}
-                             //}, {
-                             //    terms: {"result": (json[0].result !== undefined ? json[0].result[0] : []), boost: 2}
-                             }])
                         }
-                    },
+                    }
+                };
 
                     //functions: [
                     /*{
@@ -198,34 +143,31 @@ app.get('/search', function(req, res) {
                      }
                      }
 
-                    //]
-                }
-            }
+                client.search(query, function (error, response, status) {
+                    if (error) {
+                        console.log("search error: " + error)
+                    }
+                    else {
+                        console.log("--- Response ---");
+                        console.log(response);
+                        console.log("--- Hits ---");
+                        response.hits.hits.forEach(function (hit) {
+                            console.log(JSON.stringify(hit));
+                        })
+                        console.log(response.hits.hits);
+                        res.end(JSON.stringify({results: response.hits.hits.map(hit => hit._source)}));
+                    }
+                });
+
+            });
         }
-        }*/
+});
 
-        client.search(query,function (error, response,status) {
-            if (error){
-                console.log("search error: "+error)
-            }
-            else {
-                console.log("--- Response ---");
-                console.log(response);
-                console.log("--- Hits ---");
-                response.hits.hits.forEach(function(hit){
-                    console.log(JSON.stringify(hit));
-                    output.push([hit._score + " " + hit._source.name])
-                })
-            }
-        });
-    })
+// Set up view rendering using handlebars templates
+app.use(express.static(__dirname + '/views'));
+app.set('view engine', 'html');
+app.set('view engine', 'hbs');
 
-    res.render('index', {
-        results : [
-            {
-                "arguments": output
-            }]
-    });
 });
 
 app.listen(PORT, function () {
