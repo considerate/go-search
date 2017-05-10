@@ -16,6 +16,7 @@ function createLineReader(stream){
 
 function parseParameters(tokens) {
     if(PRINTOUTS) console.error('    :: parameters');
+	//console.log("Expect leftParen: " + JSON.stringify(tokens));
     expect(tokens, 'leftParen');
     let parameters = List([]);
     tokens = tokens.shift();
@@ -25,7 +26,7 @@ function parseParameters(tokens) {
             tokens = tokens.shift();
         }
     } catch (e) {
-        console.error(e);
+       // console.error(e);
     }
     if(PRINTOUTS) console.error('    :: rest of tokens', JSON.stringify(tokens));
     expect(tokens, 'rightParen');
@@ -152,7 +153,7 @@ function parseTokens(tokens) {
 		console.error('    :: function');
 		console.error(JSON.stringify(tokens));
 	}
-    expect(tokens, 'identifier');
+	expect(tokens, 'identifier');
     if(tokens.get(0).text != 'func') {
         throw new Error('Not a function');
     }
@@ -216,7 +217,7 @@ function parseTokens(tokens) {
         }];
     } catch (e) {
 		// none of the above, interesting to see what it is!!!
-        console.error(e);
+       console.error(e);
     }
 }
 
@@ -232,7 +233,7 @@ const matchers = {
     comma: /,/y,
     space: /\s+/y,
     spread: /\.\.\./y,
-    lineComment: /\/\//y,
+    lineComment: /\/\//g,
 };
 
 function tokenizeFile(filename) {
@@ -304,6 +305,7 @@ function tokenizeStream(stream) {
                 tokens = [];
                 return;
             }
+			//console.log(line);
 
 			// have a function signature on this line
             let isToken = true;
