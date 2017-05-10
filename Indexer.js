@@ -84,7 +84,6 @@ const indexTokenizedFiles = (files) => {
             const id = undefined;
             ops.push({index: {_index: 'gosearchindex', _type: 'function'}});
             ops.push(post);
-            console.log(post);
         });
         return new Promise((resolve) => {
             esClient.bulk({

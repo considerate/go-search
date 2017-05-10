@@ -85,7 +85,6 @@ function fetchRepo(repo) {
         let fetchURL = 'https://github.com/'+url.pathname.substring(7)+'/archive/master.zip'
         let zipFile = [filesPath, repo.id].join(filePathSeparator) + '.zip';
         let repoPath = [filesPath, repo.id].join(filePathSeparator);
-        console.log(fetchURL);
         if(fs.existsSync(repoPath)){
             // dont download repo if unzipped version already exists
             return resolve();
