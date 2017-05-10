@@ -25,7 +25,7 @@ function parseParameters(tokens) {
             tokens = tokens.shift();
         }
     } catch (e) {
-        console.error(e);
+        //console.error(e);
     }
     if(PRINTOUTS) console.error('    :: rest of tokens', JSON.stringify(tokens));
     expect(tokens, 'rightParen');
@@ -168,16 +168,16 @@ function parseTokens(tokens) {
         [tokens5, result] = parseResult(tokens4);
         result_info = getTypeInfo(result);
         return [tokens4, {
-            object: receiver,
-            object_info, 
+            object: receiver.toJS(),
+            object_info,
             name,
-            name_parts,
-            parameters,
+            name_parts: name_parts.toJS(),
+            parameters: parameters.toJS(),
             parameters_info,
-            result,
+            result: result.toJS(),
             result_info
         }];
-    } 
+    }
     catch (e) {
     }
     try {
@@ -192,9 +192,9 @@ function parseTokens(tokens) {
         return [tokens4, {
             name,
             name_parts,
-            parameters,
+            parameters: parameters.toJS(),
             parameters_info,
-            result,
+            result: result.toJS(),
             result_info
         }];
     } catch (e) {
@@ -205,18 +205,18 @@ function parseTokens(tokens) {
         [tokens2, parameters] = parseParameters(tokens);
         parameters_info = getTypeInfo(parameters);
         [tokens3, result] = parseResult(tokens2);
-        console.error("Result: " + result);
-        console.error(result);
+        if(PRINTOUTS) console.error("Result: " + result);
+        if(PRINTOUTS) console.error(result);
         result_info = getTypeInfo(result);
         return [tokens3, {
-            parameters,
+            parameters: parameters.toJS(),
             parameters_info,
-            result,
+            result: result.toJS(),
             result_info
         }];
     } catch (e) {
         // none of the above, interesting to see what it is!!!
-        console.error(e);
+        // console.error(e);
     }
 }
 
@@ -261,7 +261,7 @@ function getStringParts(name) {
             found = true;
             parts.push(name.substring(index, camelCase.lastIndex - 1).toLowerCase());
             index = camelCase.lastIndex - 1;
-            
+
         }
     }
     while(found);
@@ -269,7 +269,7 @@ function getStringParts(name) {
     return parts;
 }
 
-/* 
+/*
  * parameter list: List([List([name, type]),...])])
  * => {type: n, ...}
  * => [{type: type, count: n}, ...]
@@ -288,7 +288,7 @@ function getTypeInfo(arr) {
             count: typeCounts[type],
         };
     });
-    const total = types.reduce((sum, param) => {
+    const total = Array.from(types).reduce((sum, param) => {
         return sum + param.count;
     }, 0);
     return {types, total};
@@ -301,10 +301,10 @@ function tokenizeStream(stream) {
         const lineReader = createLineReader(stream);
         const signatures = [];
         lineReader.on('end', function () {
-            resolve(List(signatures));
+            resolve(signatures);
         });
         lineReader.on('close', function () {
-            resolve(List(signatures));
+            resolve(signatures);
         });
         lineReader.on('line', function (line) {
             // first make sure that we're not in a comment
@@ -318,7 +318,6 @@ function tokenizeStream(stream) {
                 tokens = [];
                 return;
             }
-			//console.log(line);
 
             // have a function signature on this line
             let isToken = true;
@@ -333,7 +332,7 @@ function tokenizeStream(stream) {
                     if (match !== null) {
                         if (matcher == 'space') {
                             // do nothing
-                        } 
+                        }
                         else if (matcher === 'leftBrace') {
                             // found the end of this function declaration
                             if(PRINTOUTS) console.error("Found end of function declaration, parsing ...");
@@ -346,7 +345,7 @@ function tokenizeStream(stream) {
                             inMatch = false;
                             isToken = false;
                             return;
-                        } 
+                        }
                         else {
                             // not the end of the function declaration, push an entry to the tokens array with the name of the match and the match itself
                             tokens.push({
