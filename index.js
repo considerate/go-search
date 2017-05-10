@@ -30,7 +30,8 @@ app.get('/search', function(req, res) {
             return json;
         }).then(function(json) {
             console.log(json);
-            const parameterQueries = json[0].parameters_info.types.map((param) => {
+            const paramTypes = json[0].parameters_info && json[0].parameters_info.types || [];
+            const parameterQueries = paramTypes.map((param) => {
                 return {
                     nested: {
                         path: "parameters_info.types",
@@ -51,7 +52,8 @@ app.get('/search', function(req, res) {
                 }
             });
 
-            const resultQueries = json[0].result_info.types.map((param) => {
+            const resultTypes = json[0].result_info && json[0].result_info.types || [];
+            const resultQueries = resultTypes.map((param) => {
                 return {
                     nested: {
                         path: "result_info.types",
@@ -71,7 +73,8 @@ app.get('/search', function(req, res) {
                     }
                 });
 
-            const receiverQueries = json[0].object_info.types.map((param) => {
+            const receiverTypes = json[0].receiver_info && json[0].receiver_info.types || [];
+            const receiverQueries = receiverTypes.map((param) => {
                 return {
                     nested: {
                         path: "object_info.types",
