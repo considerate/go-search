@@ -33,16 +33,41 @@ const doCreate = () => {
                 mappings: {
                     function: {
                         properties: {
+                            "object_info": {
+                                properties: {
+                                    types: {
+                                        type: "nested",
+                                        properties: {
+                                            type: { type: "keyword" },
+                                            count: { type: "integer"},
+                                        }
+                                    },
+                                    total: {type: "integer"}
+                                },
+                                type: "object"
+                            },
                             "result_info": {
                                 properties: {
-                                    types: {type: "nested"},
+                                    types: {
+                                        type: "nested",
+                                        properties: {
+                                            type: { type: "keyword" },
+                                            count: { type: "integer"},
+                                        }
+                                    },
                                     total: {type: "integer"}
                                 },
                                 type: "object"
                             },
                             "parameters_info": {
                                 properties: {
-                                    types: {type: "nested"},
+                                    types: {
+                                        type: "nested",
+                                        properties: {
+                                            type: { type: "keyword" },
+                                            count: { type: "integer"},
+                                        }
+                                    },
                                     total: {type: "integer"}
                                 },
                                 type: "object"
