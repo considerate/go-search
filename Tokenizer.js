@@ -340,10 +340,13 @@ function tokenizeStream(stream) {
                         else if (matcher === 'leftBrace') {
                             // found the end of this function declaration
                             if(PRINTOUTS) console.error("Found end of function declaration, parsing ...");
-                            const result = parseTokens(List(tokens));
-                            if(result) {
-                                const parseTree = result[1];
-                                signatures.push(parseTree);
+                            try {
+                                const result = parseTokens(List(tokens));
+                                if(result) {
+                                    const parseTree = result[1];
+                                    signatures.push(parseTree);
+                                }
+                            } catch (e) {
                             }
                             tokens = [];
                             inMatch = false;
