@@ -11,8 +11,8 @@ var client = new elasticsearch.Client({
 
 const DELETE = false;
 const SEARCH = false;
-const ADD = true;
-const CREATE = false;
+const ADD = false;
+const CREATE = true;
 
 if(CREATE) {
     client.indices.create({

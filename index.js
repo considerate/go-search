@@ -22,7 +22,6 @@ app.get('/search', function(req, res) {
             tokenizeString(queryString).then(function (result) {
                 var func = JSON.stringify(result)
                 var json = JSON.parse(func)
-                console.log(queryString, json)
 
         //scriptString = "int nonmatch = 0;"
         //scriptString += "for(element in doc['parameters_info.count'].values) {}"
@@ -88,6 +87,26 @@ app.get('/search', function(req, res) {
                         }
                     }
                 });
+                const resultQueries = json[0].result_info.types.map((param) => {
+                    return {
+                        nested: {
+                            path: "result_info.types",
+                            query: {
+                                function_score: {
+                                    query: {
+                                        match: {"result_info.types.type": param.type},
+                                    },
+                                    gauss: {
+                                        "result_info.types.count": {
+                                            origin: param.count,
+                                            scale: 1,
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
 
                 const query = {
                     index: 'gosearchindex',
@@ -98,31 +117,42 @@ app.get('/search', function(req, res) {
                             function_score: {
                                 query: {
                                     bool: {
-                                        should: parameterQueries.concat([{
-                                            terms: {
-                                                "name_parts": (json[0].name_parts !== undefined ? json[0].name_parts : []),
-                                                boost: 5
-                                            }
-                                        }]/*.concat([{
-
-                                                    function_score: {
-                                                        gauss: {
-                                                            "parameters_info.total": {
-                                                                origin: (json[0].parameters_info.total || 0),
-                                                                scale: 1,
-                                                            }
+                                        should: parameterQueries
+                                            .concat(resultQueries)
+                                            .concat([{
+                                                terms: {
+                                                    "name_parts": (json[0].name_parts || []),
+                                                    boost: 5
+                                                }
+                                            },
+                                            {
+                                                function_score: {
+                                                    gauss: {
+                                                        "parameters_info.total": {
+                                                            origin: (json[0].parameters_info.total || 0),
+                                                            scale: 1,
                                                         }
                                                     }
-
-                                        }])*/)
+                                                }
+                                            },
+                                            {
+                                                function_score: {
+                                                    gauss: {
+                                                        "result_info.total": {
+                                                            origin: (json[0].result_info.total || 0),
+                                                            scale: 1,
+                                                        }
+                                                    }
+                                                }
+                                            }])
                                     }
-                                },
+                                }/*,
                                 functions: [{
                                     field_value_factor: {
                                         field: "votes",
                                         modifier: "log1p"
                                     }
-                                }]
+                                }]*/
                             }
                         }
                     }
@@ -148,13 +178,10 @@ app.get('/search', function(req, res) {
                         console.log("search error: " + error)
                     }
                     else {
-                        console.log("--- Response ---");
-                        console.log(response);
                         console.log("--- Hits ---");
                         response.hits.hits.forEach(function (hit) {
                             console.log(JSON.stringify(hit));
                         })
-                        console.log(response.hits.hits);
                         res.end(JSON.stringify({results: response.hits.hits.map(hit => hit._source)}));
                     }
                 });
