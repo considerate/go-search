@@ -277,7 +277,7 @@ function getTypeInfo(arr) {
 	//Object.keys(info).forEach(key => { ret.push([key, String(info[key])]); });
 	//return ret;
 	info.__sz = paramCount;
-	return info;
+	return JSON.stringify(info);
 }
 
 function tokenizeStream(stream) {

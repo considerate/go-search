@@ -25,7 +25,7 @@
 			A project for DH2642<br>&copy 2017
 		</div>
 		<script>
-			var searchContent = "r"; // last search string
+			var searchContent = ""; // last search string
 			var results = []; // search results
 			
 			// grabs the text from the search field and performs a search if necessary and then stages the results
@@ -38,11 +38,13 @@
 						xhttp.onreadystatechange = function() {
 							if (this.readyState == 4 && this.status == 200) {
 								// Typical action to be performed when the document is ready:
+								console.log(xhttp.responseText);
 								results = JSON.parse(xhttp.responseText);
-								setContent;
+								setContent();
 							}
 						};
-						xhttp.open("GET", "http://search.considerate.se/?q=" + newSearch, true);
+						//xhttp.open("GET", "http://search.considerate.se/?q=" + newSearch, true);
+						xhttp.open("GET", "http://localhost:3000/search?q=" + newSearch, true);
 						xhttp.send();
 					}
 					else {
@@ -55,8 +57,6 @@
 			// sets the contents of the search results, if any query has been entered
 			function setContent() {
 				if(searchContent != "") {
-					//if(results.length > 0) {
-					//}
 					document.getElementById("results").style.display = "block";
 				}
 				else document.getElementById("results").style.display = "none";
@@ -69,7 +69,7 @@
 			}
 			
 			setContent();
-			//document.getElementById("searchButton").addEventListener('click', loadResults);
+			document.getElementById("searchButton").addEventListener('click', loadResults);
 			document.getElementById("searchButton").addEventListener('mouseover', function() { this.style.backgroundColor = "#13626c"; });
 			document.getElementById("searchButton").addEventListener('mouseout', function() { this.style.backgroundColor = "#a8e7f0"; });
 			document.getElementById("searchButton").addEventListener('mousedown', function() { this.style.backgroundColor = "black"; });
