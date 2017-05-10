@@ -171,7 +171,7 @@ function parseTokens(tokens) {
             object: receiver.toJS(),
             object_info,
             name,
-            name_parts: name_parts.toJS(),
+            name_parts: name_parts,
             parameters: parameters.toJS(),
             parameters_info,
             result: result.toJS(),
