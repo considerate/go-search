@@ -16,7 +16,18 @@ const ADD = false;
 if(ADD) {
 	// Create index
 	client.indices.create({
-		index: 'gosearchindex'
+		index: 'gosearchindex',
+        body: {
+		    mappings: {
+                function: {
+                    properties: {
+                        parameters_info: {
+                            type: "nested"
+                        }
+                    }
+                }
+            }
+        }
 	},function(err,resp,status) {
 		if(err) {
 			console.log(err);
@@ -26,7 +37,7 @@ if(ADD) {
 		}
 	});
 
-	// Add documents to index
+/*	// Add documents to index
 	client.index({
 		index: 'gosearchindex',
 		id: '1',
@@ -192,6 +203,80 @@ if(ADD) {
             "parameters_info" : {"__sz" : 3, "int" : 2, "String" : 1},
             "result" : [["var", "void"]],
             "result_info" : {"__sz" : 1, "void" : 1},
+            "uri" : "https:\/\/api.github.com\/paramTest4",
+            "votes" : 4
+        }
+    },function(err,resp,status) {
+        console.log(resp);
+    });*/
+
+    client.index({
+        index: 'gosearchindex',
+        id: '6',
+        type: 'function',
+        body: {
+            "name" : "paramTest1",
+            "name_parts" : ["param", "test"],
+            "parameters" : [["x", "int"]],
+            "parameters_info" : [{"type" : "int", "count" : 1}],
+            "result" : [["var", "void"]],
+            "result_info" : [{"type":"void","count":1}],
+            "uri" : "https:\/\/api.github.com\/paramTest1",
+            "votes" : 4
+        }
+    },function(err,resp,status) {
+        console.log(resp);
+    });
+
+    client.index({
+        index: 'gosearchindex',
+        id: '7',
+        type: 'function',
+        body: {
+            "name" : "paramTest2",
+            "name_parts" : ["param", "test"],
+            "parameters" : [["x", "int"], ["y", "int"]],
+            "parameters_info" : [{"type" : "int", "count" : 2}],
+            "result" : [["var", "void"]],
+            "result_info" : [{"type":"void","count":1}],
+            "uri" : "https:\/\/api.github.com\/paramTest2",
+            "votes" : 4
+        }
+    },function(err,resp,status) {
+        console.log(resp);
+    });
+
+    client.index({
+        index: 'gosearchindex',
+        id: '8',
+        type: 'function',
+        body: {
+            "name" : "paramTest3",
+            "name_parts" : ["param", "test"],
+            "parameters" : [["x", "int"], ["y", "int"], ["z", "int"]],
+            "parameters_info" : [{"type" : "int", "count" : 3}],
+            "result" : [["var", "void"]],
+            "result_info" : [{"type":"void","count":1}],
+            "uri" : "https:\/\/api.github.com\/paramTest3",
+            "votes" : 4
+        }
+    },function(err,resp,status) {
+        console.log(resp);
+    });
+
+    client.index({
+        index: 'gosearchindex',
+        id: '9',
+        type: 'function',
+        body: {
+            "object": [["s", "SortService"]],
+            "object_info" : [{"type":"SortService","count":1}],
+            "name" : "paramTest4",
+            "name_parts" : ["param", "test"],
+            "parameters" : [["x", "int"], ["y","int"] ["s", "String"]],
+            "parameters_info" : [{"type":"int","count":2},{"type":"String","count":1}],
+            "result" : [["var", "void"]],
+            "result_info" : [{"type":"void","count":1}],
             "uri" : "https:\/\/api.github.com\/paramTest4",
             "votes" : 4
         }
