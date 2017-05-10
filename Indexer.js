@@ -3,6 +3,12 @@ const walk = require('walk');
 const filepath = './files';
 const fspath = require('path');
 const fs = require('fs');
+const elasticsearch = require('elasticsearch');
+const esClient = new elasticsearch.Client({
+    host: 'localhost:9200',
+    //log: 'trace'
+    //log: 'error'
+});
 
 function tokenize(_, dirPath, dirs, files) {
     return Promise.all(files.map(tokenizeFile));
@@ -28,7 +34,6 @@ function walkFiles(filepath, url) {
                     return func;
                 });
                 documents[filename] = withUrls;
-                console.log(JSON.stringify(withUrls));
             }).catch(error => {
                 console.log(error);
             })
@@ -44,6 +49,7 @@ function walkFiles(filepath, url) {
         });
     });
 }
+
 const readFile = (file) => new Promise((resolve, reject) =>
      fs.readFile(file, (err, data) => err ? reject(err) : resolve(data)));
 
@@ -60,53 +66,70 @@ const mergeObjects = (objects) => {
 
 const addBase = (base) => (file) => [base, file].join('/');
 
-readDir('./links')
-.then(files => {
-    console.log(files);
-    const allLinks = Promise.all(files.map(addBase('./links')).map(readJson))
+
+/**
+ * Put a tokenized file into the index
+ */
+const indexTokenizedFiles = (files) => {
+    return Promise.all(Object.keys(files).map((filename) => {
+        const posts = files[filename]; // posts are the tokenized functions
+        if(posts.length === 0) {
+            return Promise.resolve();
+        }
+        let ops = [];
+        posts.forEach(post => {
+            //TODO: think of an _id to use
+            const id = undefined;
+            ops.push({index: {_index: 'gosearchindex', _type: 'function'}});
+            ops.push(post);
+        });
+        return new Promise((resolve) => {
+            esClient.bulk({
+                body: ops
+            }, (err, response) => {
+                if(err) {
+                    console.error(err);
+                }
+                resolve(response);
+            });
+        });
+    }));
+};
+
+const sequence = (f, list) => {
+    return list.reduce((prev, x) => {
+        return prev.then(result => {
+            return f(x).then(y => {
+                result.push(y);
+                return result;
+            });
+        });
+    }, Promise.resolve([]));
+}
+/*
+.then( (files) => {
+                // This should maybe not be done here, as this
+                // should rather return a promise that has read files
+                // not inserted to index yet
+                // but as writted below, I get too many files open error
+                // if waiting
+                return indexTokenizedFiles(files);
+*/
+const documentsList = (f) => readDir('./links').then(files => {
+    const allLinks = Promise.all(files.map(addBase('./links')).map(readJson));
     return allLinks.then(mergeObjects)
     .then(links => {
         const ids = Object.keys(links);
-        return Promise.all(ids.map(id => {
+        return sequence(id => {
             const directory = [filepath, id].join('/');
             const url = links[id];
-            return walkFiles(directory, url);
-        }));
+            return walkFiles(directory, url).then(f);
+        }, ids)
     });
 });
+
+documentsList(indexTokenizedFiles).then((result) => {});
 
 const search = function search(index, body) {
     return client.search({index: index, body: body});
 };
-
-/*
-var elasticsearch = require('elasticsearch');
-
-var client = new elasticsearch.Client({
-    host: 'localhost:9200',
-    log: 'trace'
-});
-
-function searchIndex() {
-    let body = {
-        size: 20,
-        from: 0,
-        query: {
-            match_all: {}
-        }
-    };
-
-    search('gosearch', body)
-        .then(results => {
-            console.log(`found ${results.hits.total} items in ${results.took}ms:`);
-            results.hits.hits.forEach(
-                (hit, index) => console.log(
-                    `\t${body.from + ++index} - ${hit._source.name} (${hit._source.parameters}) returns ${hit._source.type}`
-                )
-            )
-        })
-        .catch(console.error);
-};
-
-searchIndex();
-*/

@@ -14,7 +14,7 @@ const mkdirs = require('node-mkdirs');
 
 const language = 'go';
 const languageFile = '.go';
-const startURL = 'https://api.github.com/search/repositories?q=language:'+language+'&page=33';
+const startURL = 'https://api.github.com/search/repositories?q=language:'+language+'&page=34';
 // WARNING: github has i request limit. 10 per minute if unauthorized and 30 authorized. 
 // For this case there are 34 pages in total, so only fetching the three last for now
 const filesPath = 'files';
