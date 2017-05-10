@@ -37,6 +37,7 @@ const context = {
 app.get('/search', function(req, res) {
     const query = req.query.q;
     //TODO: replace mocked context with results from elasticsearch
+<<<<<<< HEAD
 	if(query) {
 		if(false) {
 		var output = []
@@ -44,8 +45,57 @@ app.get('/search', function(req, res) {
 			var func = JSON.stringify(result)
 			var json = JSON.parse(func)
 
+=======
+    var output = []
+    tokenizeString(query).then(function(result) {
+        var func = JSON.stringify(result)
+        var json = JSON.parse(func)
 
-        const parameters = [{type: 'String', count: 1},{type: 'int', count: 1}];
+        //scriptString = "int nonmatch = 0;"
+        //scriptString += "for(element in doc['parameters_info.count'].values) {}"
+        /*scriptString = "int nonmatch = 0;" +
+            "int additionalObject = (int) doc['object_info.__sz'].value;"*/
+        /*for (var key in json[0].object_info) {
+            if (json[0].object_info.hasOwnProperty(key)) {
+                scriptString +=
+                    "try {" +
+                    "   nonmatch += (int) Math.abs(doc['object_info." + key + "'][0] - " + json[0].object_info[key] + ");" +
+                    "   additionalObject -= doc['object_info." + key + "'][0];" +
+                    "} catch (Exception e) {" +
+                    "   nonmatch += " + json[0].object_info[key] +
+                    "}"
+            }
+        }/*
+        scriptString += "int additionalParam = (int) doc['parameters_info.__sz'].value;"
+        for (var key in json[0].parameters_info) {
+            if (json[0].parameters_info.hasOwnProperty(key) && key != '__sz') {
+                scriptString +=
+                    "try {" +
+                    "   nonmatch += (int) Math.abs(doc['parameters_info." + key + "'][0] - " + json[0].parameters_info[key] + ");" +
+                    "   additionalParam -= doc['parameters_info." + key + "'][0];" +
+                    "} catch (Exception e) {" +
+                    "   nonmatch += " + json[0].parameters_info[key] +
+                    "}"
+            }
+        }
+        scriptString += "int additionalResult = (int) doc['result_info.__sz'].value;"
+        for (var key in json[0].result_info) {
+            if (json[0].result_info.hasOwnProperty(key) && key != '__sz') {
+                scriptString +=
+                    "try {" +
+                    "   nonmatch += (int) Math.abs(doc['result_info." + key + "'][0] - " + json[0].result_info[key] + ");" +
+                    "   additionalResult -= doc['result_info." + key + "'][0];" +
+                    "} catch (Exception e) {" +
+                    "   nonmatch += " + json[0].result_info[key] +
+                    "}"
+            }
+        }*/
+        //scriptString += "return 1 / Math.log(nonmatch + 2);"// + additionalObject + additionalParam + additionalResult);"
+
+        //console.log(scriptString)
+>>>>>>> 367972b... Add score adjustment for total number of parameters
+
+        const parameters = [{type: 'int', count: 1}];
 
         const parameterQueries = parameters.map(param => {
             return {
@@ -74,10 +124,25 @@ app.get('/search', function(req, res) {
             type: 'function',
             body: {
                 query: {
-                    bool: {
-                        should: parameterQueries.concat([{
-                            terms: {"name_parts": (json[0].name_parts !== undefined ? json[0].name_parts : []), boost: 5}
-                        }])
+                    function_score: {
+                        query: {
+                            bool: {
+                                should: parameterQueries.concat([{
+                                    terms: {
+                                        "name_parts": (json[0].name_parts !== undefined ? json[0].name_parts : []),
+                                        boost: 5
+                                    }
+                                }])
+                            }
+                        },
+                        functions: [{
+                            gauss: {
+                                "parameters_count": {
+                                    origin: 1, // TODO insert json[0].parameters_count
+                                    scale: 1,
+                                }
+                            }
+                        }]
                     }
                 }
             }
