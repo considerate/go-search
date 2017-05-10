@@ -232,7 +232,7 @@ const matchers = {
     comma: /,/y,
     space: /\s+/y,
     spread: /\.\.\./y,
-    lineComment: /\/\//y,
+    lineComment: /\/\//g,
 };
 
 function tokenizeFile(filename) {
@@ -318,6 +318,7 @@ function tokenizeStream(stream) {
                 tokens = [];
                 return;
             }
+			//console.log(line);
 
             // have a function signature on this line
             let isToken = true;

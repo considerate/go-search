@@ -9,9 +9,9 @@ var client = new elasticsearch.Client({
     log: 'trace'
 });
 
-const DELETE = false;
+const DELETE = true;
 const SEARCH = false;
-const ADD = true;
+const ADD = false;
 
 if(ADD) {
 	// Create index
