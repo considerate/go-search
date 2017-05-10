@@ -33,7 +33,6 @@ function unzipRepo(zipFile){
         return Promise.resolve();
     }
     return new Promise(function(resolve, reject) {
-        console.error('Unzipping repo: ' + zipFile);
         let dirPath = zipFile.substring(0,zipFile.length - 4);
         try{
             fs.mkdirSync(dirPath);
@@ -86,21 +85,28 @@ function fetchRepo(repo) {
         let fetchURL = 'https://github.com/'+url.pathname.substring(7)+'/archive/master.zip'
         let zipFile = [filesPath, repo.id].join(filePathSeparator) + '.zip';
         let repoPath = [filesPath, repo.id].join(filePathSeparator);
+        console.log(fetchURL);
         if(fs.existsSync(repoPath)){
             // dont download repo if unzipped version already exists
             return resolve();
         }
+        try {
         wget({
             url: fetchURL,
             dest: zipFile,
             },
             function(err, data) {
                 if(err){
+                    console.error(err);
                     return reject(err);
                 }
                 return resolve(zipFile);
             }
-        );
+            );
+        } catch (e) {
+            console.error(e);
+            return resolve();
+        }
     });
 }
 
@@ -113,16 +119,15 @@ function fetchRepo(repo) {
 function fetchRepositories(url, options){
     return new Promise(function(resolve, reject) {
         const opts = Object.assign({}, options, {url});
-        console.log(opts);
         request(opts, function(error, response, body){
             if(error) {
                 return reject(error);
             }
-            console.error('Fetching repolist: ' + url);
             if (response.statusCode !== 200){
                 return reject(new Error('Invalid status code' + response.statusCode));
             }
             res = JSON.parse(body);
+            console.log("the parsed result: " + res);
             // Go to next batch of repositories
             let nextLink = parse(response.headers.link);
             if(nextLink.next){
@@ -153,7 +158,7 @@ function run(language){
 
     // extract the relevant info from repo object
     function getUrlMaps(repos) {
-        return repos.map(repo => [repo.id, repo.url]);
+        return repos.map(repo => [repo.id, repo.url, repo.watchers, repo.forks]);
     }
 
     // Fetch all repositories recursively
@@ -181,9 +186,11 @@ function run(language){
 }
 
 run(language).then((urlAssociations) => {
-    // TODO: This map needs to be printed to file for the indexer
     const urlMaps = urlAssociations.reduce( (acc, tuple) => {
-        acc[tuple[0]] = tuple[1];
+        acc[tuple[0]] = {url: tuple[1],
+                        watchers: tuple[2],
+                        forks: tuple[3]
+                        };;
         return acc;
     }, {});
 
