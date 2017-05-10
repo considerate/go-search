@@ -95,7 +95,7 @@ app.get('/search', function(req, res) {
         //console.log(scriptString)
 >>>>>>> 367972b... Add score adjustment for total number of parameters
 
-        const parameters = [{type: 'int', count: 2},{type: 'String', count: 1}];
+        const parameters = [{type: 'int', count: 2},{type: 'String', count: 1}]; // TODO (json[0].parameters_info.types !== undefined ? json[0].parameters_info.types : [])
 
         const parameterQueries = parameters.map(param => {
             return {
@@ -139,7 +139,7 @@ app.get('/search', function(req, res) {
                                             function_score: {
                                                 gauss: {
                                                     "parameters_info.total": {
-                                                        origin: 3, // TODO insert json[0].parameters_info.total
+                                                        origin: 3, // TODO (json[0].parameters_info.total !== undefined ? 0)
                                                         scale: 1,
                                                     }
                                                 }
@@ -148,15 +148,13 @@ app.get('/search', function(req, res) {
                                     }
                                 }]))
                             }
-                        }/*,
+                        },
                         functions: [{
-                            gauss: {
-                                "parameters_info.total": {
-                                    origin: 1, // TODO insert json[0].parameters_count
-                                    scale: 1,
-                                }
-                            }
-                        }]*/
+                            field_value_factor: {
+                                field: "votes",
+                                modifier: "log1p"
+                             }
+                        }]
                     }
                 }
             }
