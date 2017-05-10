@@ -21,14 +21,18 @@ const context = {
     {
         "name": "read",
         "arguments": [["x", "int"], ["y", "double"], ["str", "string"]],
-        "returns": "string"
+        "returns": ["string"],
+		"objects" : [],
+		"link" : "http://www.github.com"
     },
     {
         "name": "write",
         "arguments": [["offset", "int"], ["length", "double"]],
-        "returns": ""
-    },
-    ],
+        "returns": [],
+		"objects" : [],
+		"link" : "http://www.github.com"
+    }
+    ]
 };
 app.get('/search', function(req, res) {
     const query = req.query.q;

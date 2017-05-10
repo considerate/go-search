@@ -1,27 +1,30 @@
 <html>
-	<body style="text-align: center; background-color: #beedf4">
-		<img src="goheader.png" style="width: 40%">
-		<div style="background-color: #6ad7e5; width: 90%; margin: auto; border: 4px solid black; border-radius: 20px">
-			<div style="padding: 20px; line-height: 40px">
-				<input type="text" id="searchField" name="search" style="width: 100%; color: #13626c; font-size: 40px; padding: 5px; height: 70px; border-radius: 10px; background-color: #a8e7f0; border: 2px solid #13626c">
+	<head>
+		<link rel="stylesheet" type="text/css" href="style.css">
+	</head>
+	<body>
+		<img src="goheader.png" id="header">
+		<div id="topDiv" style="">
+			<div id="upper">
+				<input type="text" id="searchField" name="search">
 			</div>
-			<div style="padding: 20px; padding-top: 0px">
-				<button id="searchButton" style="cursor: pointer; background-color: #a8e7f0; font-size: 20px; border: 2px solid #13626c; width: 25%; height: 40px; border-radius: 10px">Go search!</button>
-			</div>
-		</div>
-		
-		<div id="results" style="color: #13626c;  background-color: #6ad7e5; width: 90%; padding: 10px 0px; margin: auto; margin-top: 20px; margin-bottom: 20px;  border: 4px solid black; border-radius: 20px">
-			<div style="border-radius: 10px; background-color: #a8e7f0; border: 2px solid #13626c; padding: 10px; text-align: left; margin: 10px 20px; font-size: 2em">
-				<p style="margin: 0px; padding: 0px">1. read(x int, y double, str string, ) string</p>
-				<a style="color: #13626c" href="www.github.com">www.github.com/yadayadayad/yadayadyada</a>
-			</div>
-			<div style="border-radius: 10px; background-color: #a8e7f0; border: 2px solid #13626c; padding: 10px; text-align: left; margin: 10px 20px; font-size: 2em">
-				<p style="margin: 0px; padding: 0px">2. write(offset int, length double, )</p>
-				<a style="color: #13626c" href="www.github.com">www.github.com/yadayadayad/yadayadyada</a>
+			<div id="lower">
+				<button id="searchButton">Go search!</button>
 			</div>
 		</div>
 		
-		<div style="font-size: 0.75em; text-align: center; color: #13626c; width: 90%; padding: 10px 0px; margin: auto; margin-top: 20px; margin-bottom: 20px">
+		<div id="results">
+			<div>
+				<p>1. read(x int, y double, str string, ) string</p>
+				<a href="www.github.com">www.github.com/yadayadayad/yadayadyada</a>
+			</div>
+			<div>
+				<p>2. write(offset int, length double, )</p>
+				<a href="www.github.com">www.github.com/yadayadayad/yadayadyada</a>
+			</div>
+		</div>
+		
+		<div id="footer">
 			A project for DH2642<br>&copy 2017
 		</div>
 		<script>
@@ -39,7 +42,7 @@
 							if (this.readyState == 4 && this.status == 200) {
 								// Typical action to be performed when the document is ready:
 								console.log(xhttp.responseText);
-								results = JSON.parse(xhttp.responseText);
+								results = JSON.parse(xhttp.responseText).results;
 								setContent();
 							}
 						};
@@ -54,10 +57,51 @@
 				}
 			}
 			
+			function getResultBlock(resultNo, name, objects, parameters, returns, link) {
+				string = "";
+				if(objects.length > 0) {
+					string += "(";
+					for(var i = 0; i < objects.length; ++i) {
+						if(i > 0) string += ", ";
+						string += objects[i][0] + " ";
+						string += objects[i][1];
+					}
+					string += ") ";
+				}
+				string += name;
+				string += "(";
+				if(parameters.length > 0) {
+					for(var i = 0; i < parameters.length; ++i) {
+						if(i > 0) string += ", ";
+						string += parameters[i][0] + " ";
+						string += parameters[i][1];
+					}	
+				}
+				string += ") ";
+				if(returns.length > 0) {
+					string += "(";
+					for(var i = 0; i < returns.length; ++i) {
+						if(i > 0) string += ", ";
+						string += returns[i][0] + " ";
+						string += returns[i][1];
+					}
+					string += ") ";
+				}
+				return '<div><p>' + resultNo + '. ' + string + '</p><a href="' + link + '">' + link + '</a></div>';
+			}
+			
 			// sets the contents of the search results, if any query has been entered
 			function setContent() {
 				if(searchContent != "") {
+					document.getElementById("results").innerHTML = "";
+					res = "";
+					for(var i = 0; i < results.length; ++i) {
+						res += getResultBlock(i, results[i].name, results[i].objects, results[i].arguments, results[i].returns, results[i].link);
+					}
+					document.getElementById("results").innerHTML = res;
 					document.getElementById("results").style.display = "block";
+					if(results.length === 0) document.getElementById("results").innerHTML = '<p id="error">NO results, please try again...</p>';
+					
 				}
 				else document.getElementById("results").style.display = "none";
 			}
@@ -65,7 +109,10 @@
 			// catch enter keys from search field and click button if one occurs
 			function enterKey(event) { 
 				event.preventDefault();
-				if (event.keyCode == 13) document.getElementById("searchButton").click();
+				if (event.keyCode == 13) {
+					document.getElementById("searchButton").click();
+					document.getElementById("searchField").blur();
+				}
 			}
 			
 			setContent();
@@ -74,7 +121,7 @@
 			document.getElementById("searchButton").addEventListener('mouseout', function() { this.style.backgroundColor = "#a8e7f0"; });
 			document.getElementById("searchButton").addEventListener('mousedown', function() { this.style.backgroundColor = "black"; });
 			document.getElementById("searchButton").addEventListener('mouseup', function() { this.style.backgroundColor = "#13626c"; });
-			//document.getElementById("searchField").addEventListener("keyup", enterKey);
+			document.getElementById("searchField").addEventListener("keyup", enterKey);
 		</script>
 	</body>
 	
