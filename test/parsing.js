@@ -13,3 +13,7 @@ const sig2 = 'func (Rec r) read(path string, size int) (count, bytes int){'
 const sig3 = 'func fly(int) float {'
 
 tokenizeString(sig3).then(JSON.stringify).then(log);
+
+const sig4 = 'func (r *Response) Write(bytes []byte) (int, error) {';
+
+tokenizeString(sig4).then(JSON.stringify).then(log);

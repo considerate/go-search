@@ -7,6 +7,7 @@
         <div id="topDiv" style="">
             <div id="upper">
                 <input type="search" id="searchField" name="search"
+                    placeholder="func (r Response) read(String) String"
                     autocomplete="off"
                     autocorrect="off"
                     autocapitalize="off"
@@ -31,25 +32,23 @@
             function loadResults() {
                 var newSearch = document.getElementById("searchField").value;
                 searchContent = newSearch;
-                if(newSearch != "") {
-                    var xhttp = new XMLHttpRequest();
-                    xhttp.onreadystatechange = function() {
-                        if (this.readyState == 4 && this.status == 200) {
-                            try {
-                                results = JSON.parse(xhttp.responseText).results;
-                                setContent();
-                            } catch (e) {
-                            }
+                if(newSearch == "") {
+                    newSearch = document.getElementById('searchField').getAttribute('placeholder');
+                }
+                console.log(newSearch);
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        try {
+                            results = JSON.parse(xhttp.responseText).results;
+                            setContent();
+                        } catch (e) {
                         }
-                    };
-                    //xhttp.open("GET", "http://search.considerate.se/?q=" + newSearch, true);
-                    xhttp.open("GET", "http://localhost:3000/search?q=" + newSearch, true);
-                    xhttp.send();
-                }
-                else {
-                    results = [];
-                    setContent();
-                }
+                    }
+                };
+                //xhttp.open("GET", "http://search.considerate.se/?q=" + newSearch, true);
+                xhttp.open("GET", "http://localhost:3000/search?q=" + newSearch, true);
+                xhttp.send();
             }
 
             function getResultBlock(resultNo, name, objects, parameters, returns, link) {
