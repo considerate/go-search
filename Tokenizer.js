@@ -149,9 +149,9 @@ function parseResult(tokens) {
 
 function parseTokens(tokens) {
     if(PRINTOUTS) {
-		console.error('    :: function');
-		console.error(JSON.stringify(tokens));
-	}
+        console.error('    :: function');
+        console.error(JSON.stringify(tokens));
+    }
     expect(tokens, 'identifier');
     if(tokens.get(0).text != 'func') {
         throw new Error('Not a function');
@@ -160,62 +160,62 @@ function parseTokens(tokens) {
     try { // trying to see if it is a function with receivers e.g. func (Receiver r) methodName(parameters) result
         if(PRINTOUTS) console.error('    :: method');
         [tokens2, receiver] = parseParameters(tokens);
-		object_info = getTypeInfo(receiver);
+        object_info = getTypeInfo(receiver);
         [tokens3, name] = parseIdentifier(tokens2);
-		name_parts = getStringParts(name);
+        name_parts = getStringParts(name);
         [tokens4, parameters] = parseParameters(tokens3);
-		parameters_info = getTypeInfo(parameters);
+        parameters_info = getTypeInfo(parameters);
         [tokens5, result] = parseResult(tokens4);
-		result_info = getTypeInfo(result);
+        result_info = getTypeInfo(result);
         return [tokens4, {
             object: receiver,
-			object_info, 
+            object_info, 
             name,
-			name_parts,
+            name_parts,
             parameters,
-			parameters_info,
+            parameters_info,
             result,
-			result_info
+            result_info
         }];
     } 
-	catch (e) {
+    catch (e) {
     }
     try {
-		// trying to see if it is a function without receivers e.g. func functionName(parameters) result
+        // trying to see if it is a function without receivers e.g. func functionName(parameters) result
         if(PRINTOUTS) console.error('    :: named function');
         [tokens2, name] = parseIdentifier(tokens);
-		name_parts = getStringParts(name);
+        name_parts = getStringParts(name);
         [tokens3, parameters] = parseParameters(tokens2);
-		parameters_info = getTypeInfo(parameters);
+        parameters_info = getTypeInfo(parameters);
         [tokens4, result] = parseResult(tokens3);
-		result_info = getTypeInfo(result);
+        result_info = getTypeInfo(result);
         return [tokens4, {
             name,
-			name_parts,
+            name_parts,
             parameters,
-			parameters_info,
+            parameters_info,
             result,
-			result_info
+            result_info
         }];
     } catch (e) {
     }
     try {
-		// trying to see if it is an anonymous function e.g. func (parameters) result
+        // trying to see if it is an anonymous function e.g. func (parameters) result
         if(PRINTOUTS) console.error('    :: anon function');
         [tokens2, parameters] = parseParameters(tokens);
-		parameters_info = getTypeInfo(parameters);
+        parameters_info = getTypeInfo(parameters);
         [tokens3, result] = parseResult(tokens2);
-		console.error("Result: " + result);
-		console.error(result);
-		result_info = getTypeInfo(result);
+        console.error("Result: " + result);
+        console.error(result);
+        result_info = getTypeInfo(result);
         return [tokens3, {
             parameters,
-			parameters_info,
+            parameters_info,
             result,
-			result_info
+            result_info
         }];
     } catch (e) {
-		// none of the above, interesting to see what it is!!!
+        // none of the above, interesting to see what it is!!!
         console.error(e);
     }
 }
@@ -236,7 +236,7 @@ const matchers = {
 };
 
 function tokenizeFile(filename) {
-	if(PRINTOUTS) console.error("Tokenizing " + filename);
+    if(PRINTOUTS) console.error("Tokenizing " + filename);
     return tokenizeStream(fs.createReadStream(filename))
 }
 exports.tokenizeFile = tokenizeFile;
@@ -250,34 +250,48 @@ function tokenizeString(string) {
 exports.tokenizeString = tokenizeString;
 
 function getStringParts(name) {
-	const parts = [];
-	const camelCase = new RegExp('([A-Z]{2,}|[a-z][A-Z])', 'g');
-	let index = 0;
-	let found = false;
-	do {
-		found = false;
-		let info = camelCase.exec(name);
-		if(info !== null) {
-			found = true;
-			parts.push(name.substring(index, camelCase.lastIndex - 1).toLowerCase());
-			index = camelCase.lastIndex - 1;
-			
-		}
-	}
-	while(found);
-	parts.push(name.substr(index, name.length).toLowerCase());
-	return parts;
+    const parts = [];
+    const camelCase = new RegExp('([A-Z]{2,}|[a-z][A-Z])', 'g');
+    let index = 0;
+    let found = false;
+    do {
+        found = false;
+        let info = camelCase.exec(name);
+        if(info !== null) {
+            found = true;
+            parts.push(name.substring(index, camelCase.lastIndex - 1).toLowerCase());
+            index = camelCase.lastIndex - 1;
+            
+        }
+    }
+    while(found);
+    parts.push(name.substr(index, name.length).toLowerCase());
+    return parts;
 }
 
+/* 
+ * parameter list: List([List([name, type]),...])])
+ * => {type: n, ...}
+ * => [{type: type, count: n}, ...]
+ */
+
 function getTypeInfo(arr) {
-	let info = {};
-	let ret = [];
-	let paramCount = 0
-	arr.forEach(subArr => { info[subArr.get(1)] !== undefined ? ++info[subArr.get(1)]: info[subArr.get(1)] = 1; paramCount++});
-	//Object.keys(info).forEach(key => { ret.push([key, String(info[key])]); });
-	//return ret;
-	info.__sz = paramCount;
-	return info;
+    const typeCounts = arr.reduce((counts, param) => {
+        const type = param.get(1);
+        const before = Number(counts[type]) || 0;
+        counts[type] = before + 1;
+        return counts;
+    }, {});
+    const types = Object.keys(typeCounts).map(type => {
+        return {
+            type : type,
+            count: typeCounts[type],
+        };
+    });
+    const total = types.reduce((sum, param) => {
+        return sum + param.count;
+    }, 0);
+    return {types, total};
 }
 
 function tokenizeStream(stream) {
@@ -293,7 +307,7 @@ function tokenizeStream(stream) {
             resolve(List(signatures));
         });
         lineReader.on('line', function (line) {
-			// first make sure that we're not in a comment
+            // first make sure that we're not in a comment
             const commentIndex = line.search(matchers.lineComment);
             if(commentIndex != -1) {
                 line = line.substring(0, commentIndex); // shorten the line up to where the comment begins
@@ -305,7 +319,7 @@ function tokenizeStream(stream) {
                 return;
             }
 
-			// have a function signature on this line
+            // have a function signature on this line
             let isToken = true;
             while(isToken) {
                 isToken = false;
@@ -317,11 +331,11 @@ function tokenizeStream(stream) {
 
                     if (match !== null) {
                         if (matcher == 'space') {
-							// do nothing
+                            // do nothing
                         } 
-						else if (matcher === 'leftBrace') {
-							// found the end of this function declaration
-							if(PRINTOUTS) console.error("Found end of function declaration, parsing ...");
+                        else if (matcher === 'leftBrace') {
+                            // found the end of this function declaration
+                            if(PRINTOUTS) console.error("Found end of function declaration, parsing ...");
                             const result = parseTokens(List(tokens));
                             if(result) {
                                 const parseTree = result[1];
@@ -332,12 +346,12 @@ function tokenizeStream(stream) {
                             isToken = false;
                             return;
                         } 
-						else {
-							// not the end of the function declaration, push an entry to the tokens array with the name of the match and the match itself
+                        else {
+                            // not the end of the function declaration, push an entry to the tokens array with the name of the match and the match itself
                             tokens.push({
                                 text: match[0],
                                 type: matcher,
-							});
+                            });
                             inMatch = true;
                         }
                         isToken = true;
