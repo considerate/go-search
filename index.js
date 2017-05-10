@@ -95,7 +95,7 @@ app.get('/search', function(req, res) {
         //console.log(scriptString)
 >>>>>>> 367972b... Add score adjustment for total number of parameters
 
-        const parameters = [{type: 'int', count: 1}];
+        const parameters = [{type: 'int', count: 2},{type: 'String', count: 1}];
 
         const parameterQueries = parameters.map(param => {
             return {
@@ -132,9 +132,23 @@ app.get('/search', function(req, res) {
                                         "name_parts": (json[0].name_parts !== undefined ? json[0].name_parts : []),
                                         boost: 5
                                     }
-                                }])
+                                }].concat([{
+                                    nested: {
+                                        path: "parameters_info",
+                                        query: {
+                                            function_score: {
+                                                gauss: {
+                                                    "parameters_info.total": {
+                                                        origin: 3, // TODO insert json[0].parameters_info.total
+                                                        scale: 1,
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }]))
                             }
-                        },
+                        }/*,
                         functions: [{
                             gauss: {
                                 "parameters_info.total": {
@@ -142,7 +156,7 @@ app.get('/search', function(req, res) {
                                     scale: 1,
                                 }
                             }
-                        }]
+                        }]*/
                     }
                 }
             }
