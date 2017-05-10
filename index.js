@@ -104,10 +104,10 @@ app.get('/search', function(req, res) {
                     query: {
                         function_score: {
                             query: {
-                                match: {"parameters_info.type": param.type},
+                                match: {"parameters_info.types.type": param.type},
                             },
                             gauss: {
-                                "parameters_info.count": {
+                                "parameters_info.types.count": {
                                     origin: param.count,
                                     scale: 1,
                                 }
@@ -137,7 +137,7 @@ app.get('/search', function(req, res) {
                         },
                         functions: [{
                             gauss: {
-                                "parameters_count": {
+                                "parameters_info.total": {
                                     origin: 1, // TODO insert json[0].parameters_count
                                     scale: 1,
                                 }

@@ -218,11 +218,9 @@ if(ADD) {
             "name" : "paramTest1",
             "name_parts" : ["param", "test"],
             "parameters" : [["x", "int"]],
-            "parameters_info" : [{"type" : "int", "count" : 1}],
-            "parameters_count" : 1,
+            "parameters_info" : {types: [{"type" : "int", "count" : 1}], total: 1},
             "result" : [["var", "void"]],
-            "result_info" : [{"type":"void","count":1}],
-            "result_count" : 1,
+            "result_info" : {types: [{"type":"void","count":1}], total: 1},
             "uri" : "https:\/\/api.github.com\/paramTest1",
             "votes" : 4
         }
@@ -238,11 +236,9 @@ if(ADD) {
             "name" : "paramTest2",
             "name_parts" : ["param", "test"],
             "parameters" : [["x", "int"], ["y", "int"]],
-            "parameters_info" : [{"type" : "int", "count" : 2}],
-            "parameters_count" : 2,
+            "parameters_info" : {types: [{"type" : "int", "count" : 2}], total: 2},
             "result" : [["var", "void"]],
-            "result_info" : [{"type":"void","count":1}],
-            "result_count" : 1,
+            "result_info" : {types: [{"type":"void","count":1}], total: 1},
             "uri" : "https:\/\/api.github.com\/paramTest2",
             "votes" : 4
         }
@@ -258,11 +254,9 @@ if(ADD) {
             "name" : "paramTest3",
             "name_parts" : ["param", "test"],
             "parameters" : [["x", "int"], ["y", "int"], ["z", "int"]],
-            "parameters_info" : [{"type" : "int", "count" : 3}],
-            "parameters_count" : 3,
+            "parameters_info" : {types: [{"type" : "int", "count" : 3}], total: 3},
             "result" : [["var", "void"]],
-            "result_info" : [{"type":"void","count":1}],
-            "result_count" : 1,
+            "result_info" : {types: [{"type":"void","count":1}], total: 1},
             "uri" : "https:\/\/api.github.com\/paramTest3",
             "votes" : 4
         }
@@ -276,16 +270,13 @@ if(ADD) {
         type: 'function',
         body: {
             "object": [["s", "SortService"]],
-            "object_info" : [{"type":"SortService","count":1}],
-            "object_count" : 1,
+            "object_info" : {types: [{"type":"SortService","count":1}], total: 1},
             "name" : "paramTest4",
             "name_parts" : ["param", "test"],
             "parameters" : [["x", "int"], ["y","int"] ["s", "String"]],
-            "parameters_info" : [{"type":"int","count":2},{"type":"String","count":1}],
-            "parameters_count" : 3,
+            "parameters_info" : {types: [{"type":"int","count":2},{"type":"String","count":1}], total: 3},
             "result" : [["var", "void"]],
-            "result_info" : [{"type":"void","count":1}],
-            "result_count" : 1,
+            "result_info" : {types: [{"type":"void","count":1}], total: 1},
             "uri" : "https:\/\/api.github.com\/paramTest4",
             "votes" : 4
         }
