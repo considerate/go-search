@@ -10,144 +10,174 @@ var client = new elasticsearch.Client({
     log: 'trace'
 });
 
+
 // Set up view rendering using handlebars templates
 app.use(express.static(__dirname + '/views'));
 app.set('view engine', 'html');
 app.set('view engine', 'hbs');
 
-
-const context = {
-    results: [
-    {
-        "name": "read",
-        "arguments": [["x", "int"], ["y", "double"], ["str", "string"]],
-        "returns": ["string"],
-		"objects" : [],
-		"link" : "http://www.github.com"
-    },
-    {
-        "name": "write",
-        "arguments": [["offset", "int"], ["length", "double"]],
-        "returns": [],
-		"objects" : [],
-		"link" : "http://www.github.com"
-    }
-    ]
-};
 app.get('/search', function(req, res) {
-    const query = req.query.q;
-    //TODO: replace mocked context with results from elasticsearch
-	if(query) {
-		if(false) {
-		var output = []
-		tokenizeString(query).then(function(result) {
-			var func = JSON.stringify(result)
-			var json = JSON.parse(func)
+    const queryString = req.query.q;
+    if(!queryString) {
+        return res.status(400);
+    }
 
-			var scriptString = "int nonmatch = 0;" +
-				"int additionalObject = (int) doc['object_info.__sz'].value;"
-			for (var key in json[0].object_info) {
-				if (json[0].object_info.hasOwnProperty(key) && key != '__sz') {
-					scriptString +=
-						"try {" +
-						"   nonmatch += (int) Math.abs(doc['object_info." + key + "'][0] - " + json[0].object_info[key] + ");" +
-						"   additionalObject -= doc['object_info." + key + "'][0];" +
-						"} catch (Exception e) {" +
-						"   nonmatch += " + json[0].object_info[key] +
-						"}"
-				}
-			}
-			scriptString += "int additionalParam = (int) doc['parameters_info.__sz'].value;"
-			for (var key in json[0].parameters_info) {
-				if (json[0].parameters_info.hasOwnProperty(key) && key != '__sz') {
-					scriptString +=
-						"try {" +
-						"   nonmatch += (int) Math.abs(doc['parameters_info." + key + "'][0] - " + json[0].parameters_info[key] + ");" +
-						"   additionalParam -= doc['parameters_info." + key + "'][0];" +
-						"} catch (Exception e) {" +
-						"   nonmatch += " + json[0].parameters_info[key] +
-						"}"
-				}
-			}
-			scriptString += "int additionalResult = (int) doc['result_info.__sz'].value;"
-			for (var key in json[0].result_info) {
-				if (json[0].result_info.hasOwnProperty(key) && key != '__sz') {
-					scriptString +=
-						"try {" +
-						"   nonmatch += (int) Math.abs(doc['result_info." + key + "'][0] - " + json[0].result_info[key] + ");" +
-						"   additionalResult -= doc['result_info." + key + "'][0];" +
-						"} catch (Exception e) {" +
-						"   nonmatch += " + json[0].result_info[key] +
-						"}"
-				}
-			}
-			scriptString += "return 1 / Math.log(nonmatch + additionalObject + additionalParam + additionalResult + 2);"
+    let q = queryString;
+    if (!/func/.test(queryString)) {
+        q = 'func ' + q;
+    }
+    q = q + '{';
 
-			console.log(scriptString)
+    tokenizeString(q)
+    .then(function (json) {
+        if(!json[0]) {
+            return tokenizeString('func '+queryString+'() {');
+        }
+        return json;
+    })
+    .then(function(json) {
 
-			client.search({
-				index: 'gosearchindex',
-				search_type: 'dfs_query_then_fetch',
-				type: 'function',
-				body: {
-					query: {
-						function_score: {
-							query: {
-								bool: {
-									should: [{
-									//    terms: {"object": (json[0].object !== undefined ? json[0].object[0] : []), boost: 1}
-									//}, {
-									//    match: {"name": {query: (json[0].name !== undefined ? json[0].name : []), boost: 5}}
-									//}, {
-										terms: {"name_parts": (json[0].name_parts !== undefined ? json[0].name_parts : []), boost: 5}
-									//}, {
-									//    terms: {"parameters": (json[0].parameters !== undefined ? json[0].parameters[0] : []), boost: 2}
-									//}, {
-									//    terms: {"result": (json[0].result !== undefined ? json[0].result[0] : []), boost: 2}
-									}]
-								}
-							},
-							functions: [
-								{
-									script_score: {
-										script: {
-											inline: scriptString
-										}
-									}
-								},
-								{
-									field_value_factor: {
-										field: "votes",
-										modifier: "log1p"
-									}
-								}
-							]
-						}
-					}
-				}
-			},function (error, response,status) {
-				if (error){
-					console.log("search error: "+error)
-				}
-				else {
-					console.log("--- Response ---");
-					console.log(response);
-					console.log("--- Hits ---");
-					response.hits.hits.forEach(function(hit){
-						console.log(hit);
-						output.push([hit._score + " " + hit._source.name])
-					})
-				}
-			});
-		})	
-		res.json( { results: output } );
-		}
-		else {
-			res.json(context);
-		}
-	}
+        const paramTypes = json[0].parameters_info && json[0].parameters_info.types || [];
+        const parameterQueries = paramTypes.map((param) => {
+            return {
+                nested: {
+                    path: "parameters_info.types",
+                    query: {
+                        function_score: {
+                            query: {
+                                match: {"parameters_info.types.type": param.type},
+                            },
+                            gauss: {
+                                "parameters_info.types.count": {
+                                    origin: param.count,
+                                    scale: 1,
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
+        const resultTypes = json[0].result_info && json[0].result_info.types || [];
+        const resultQueries = resultTypes.map((param) => {
+            return {
+                nested: {
+                    path: "result_info.types",
+                    query: {
+                        function_score: {
+                            query: {
+                                match: {"result_info.types.type": param.type},
+                            },
+                            gauss: {
+                                "result_info.types.count": {
+                                    origin: param.count,
+                                    scale: 1,
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const receiverTypes = json[0].receiver_info && json[0].receiver_info.types || [];
+        const receiverQueries = receiverTypes.map((param) => {
+            return {
+                nested: {
+                    path: "object_info.types",
+                    query: {
+                        function_score: {
+                            query: {
+                                match: {"object_info.types.type": param.type},
+                            },
+                            gauss: {
+                                "object_info.types.count": {
+                                    origin: param.count,
+                                    scale: 1,
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+
+        const query = {
+            index: 'gosearchindex',
+            search_type: 'dfs_query_then_fetch',
+            type: 'function',
+            body: {
+                query: {
+                    function_score: {
+                        query: {
+                            bool: {
+                                should: parameterQueries
+                                .concat(resultQueries)
+                                .concat(receiverQueries)
+                                .concat([{
+                                    terms: {
+                                        "name_parts": (json[0].name_parts || []),
+                                        boost: 5
+                                    }
+                                },
+                                {
+                                    function_score: {
+                                        gauss: {
+                                            "object_info.total": {
+                                                origin: (json[0].parameters_info.total || 0),
+                                                scale: 1,
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    function_score: {
+                                        gauss: {
+                                            "parameters_info.total": {
+                                                origin: (json[0].parameters_info.total || 0),
+                                                scale: 1,
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    function_score: {
+                                        gauss: {
+                                            "result_info.total": {
+                                                origin: (json[0].result_info.total || 0),
+                                                scale: 1,
+                                            }
+                                        }
+                                    }
+                                }])
+                            } //bool
+                        } //query
+                    } //func score
+                } //query
+            } //body
+        };
+
+        client.search(query, function (error, response, status) {
+            if (error) {
+                console.log("search error: " + error)
+            }
+            else {
+                console.log("--- Hits ---");
+                response.hits.hits.forEach(function (hit) {
+                    console.log(JSON.stringify(hit));
+                })
+                res.end(JSON.stringify({results: response.hits.hits.map(hit => hit._source)}));
+            }
+        });
+    });
 });
+
+// Set up view rendering using handlebars templates
+app.use(express.static(__dirname + '/views'));
+app.set('view engine', 'html');
+app.set('view engine', 'hbs');
 
 app.listen(PORT, function () {
     console.log('Example app listening on port ' + PORT)

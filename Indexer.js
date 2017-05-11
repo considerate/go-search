@@ -4,6 +4,11 @@ const filepath = './files';
 const fspath = require('path');
 const fs = require('fs');
 const elasticsearch = require('elasticsearch');
+// Limit number of concurrently open connections
+const http = require('http');
+const https = require('https');
+http.globalAgent.maxSockets  = 123;
+https.globalAgent.maxSockets = 123;
 const esClient = new elasticsearch.Client({
     host: 'localhost:9200',
     //log: 'trace'

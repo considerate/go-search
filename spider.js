@@ -14,7 +14,7 @@ const mkdirs = require('node-mkdirs');
 
 const language = 'go';
 const languageFile = '.go';
-const startURL = 'https://api.github.com/search/repositories?q=language:'+language+'&page=34';
+const startURL = 'https://api.github.com/search/repositories?q=language:'+language+'&page=10';
 // WARNING: github has i request limit. 10 per minute if unauthorized and 30 authorized. 
 // For this case there are 34 pages in total, so only fetching the three last for now
 const filesPath = 'files';
@@ -79,7 +79,6 @@ function unzipRepo(zipFile){
  */
 function fetchRepo(repo) {
     return new Promise( function(resolve, reject) {
-
         let url = new URL(repo.url);
         // remove word "repos/" in url with substring
         let fetchURL = 'https://github.com/'+url.pathname.substring(7)+'/archive/master.zip'
@@ -89,23 +88,10 @@ function fetchRepo(repo) {
             // dont download repo if unzipped version already exists
             return resolve();
         }
-        try {
-        wget({
-            url: fetchURL,
-            dest: zipFile,
-            },
-            function(err, data) {
-                if(err){
-                    console.error(err);
-                    return reject(err);
-                }
-                return resolve(zipFile);
-            }
-            );
-        } catch (e) {
-            console.error(e);
-            return resolve();
-        }
+        console.error(fetchURL);
+        request(fetchURL).pipe(fs.createWriteStream(zipFile))
+            .on('error', (err) => resolve())
+            .on('finish', () => resolve(zipFile))
     });
 }
 

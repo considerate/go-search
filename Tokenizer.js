@@ -49,6 +49,9 @@ function parseParameterList(tokens) {
 function parseIdentifier(tokens) {
     expect(tokens, 'identifier');
     const identifier = tokens.get(0).text;
+    if(identifier == 'func') {
+        throw new Error('Trying to parse keyword func as identifier');
+    }
     tokens = tokens.shift();
     return [tokens, identifier];
 }
@@ -171,7 +174,7 @@ function parseTokens(tokens) {
             object: receiver.toJS(),
             object_info,
             name,
-            name_parts: name_parts.toJS(),
+            name_parts: name_parts,
             parameters: parameters.toJS(),
             parameters_info,
             result: result.toJS(),
@@ -201,9 +204,10 @@ function parseTokens(tokens) {
     }
     try {
         // trying to see if it is an anonymous function e.g. func (parameters) result
-        if(PRINTOUTS) console.error('    :: anon function');
+        if (PRINTOUTS) console.error('    :: anon function');
         [tokens2, parameters] = parseParameters(tokens);
         parameters_info = getTypeInfo(parameters);
+        if (PRINTOUTS) console.log(parameters);
         [tokens3, result] = parseResult(tokens2);
         if(PRINTOUTS) console.error("Result: " + result);
         if(PRINTOUTS) console.error(result);
@@ -288,7 +292,7 @@ function getTypeInfo(arr) {
             count: typeCounts[type],
         };
     });
-    const total = Array.from(types).reduce((sum, param) => {
+    const total = types.reduce((sum, param) => {
         return sum + param.count;
     }, 0);
     return {types, total};
@@ -312,7 +316,7 @@ function tokenizeStream(stream) {
             if(commentIndex != -1) {
                 line = line.substring(0, commentIndex); // shorten the line up to where the comment begins
             }
-            let index = inMatch ? 0 : line.search(/func .*/);
+            let index = inMatch ? 0 : line.search(/func\W*/);
             inMatch = (index != -1);
             if(!inMatch) { // no function in this line
                 tokens = [];
@@ -336,10 +340,13 @@ function tokenizeStream(stream) {
                         else if (matcher === 'leftBrace') {
                             // found the end of this function declaration
                             if(PRINTOUTS) console.error("Found end of function declaration, parsing ...");
-                            const result = parseTokens(List(tokens));
-                            if(result) {
-                                const parseTree = result[1];
-                                signatures.push(parseTree);
+                            try {
+                                const result = parseTokens(List(tokens));
+                                if(result) {
+                                    const parseTree = result[1];
+                                    signatures.push(parseTree);
+                                }
+                            } catch (e) {
                             }
                             tokens = [];
                             inMatch = false;
