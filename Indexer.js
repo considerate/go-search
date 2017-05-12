@@ -35,7 +35,7 @@ function walkFiles(filepath, repo_info) {
             const fileuri = repo_info.url + '/blob/master' + relative.substring(relative.indexOf('/'));
             tokenizeFile(path).then(result => {
                 const withUrls = result.map(func => {
-                    func.uri = fileuri;
+                    func.uri = fileuri + '#L'+func.line;
                     func.watchers = repo_info.watchers;
                     func.forks = repo_info.forks;
                     return func;
@@ -85,9 +85,8 @@ const indexTokenizedFiles = (files) => {
         }
         let ops = [];
         posts.forEach(post => {
-            //TODO: think of an _id to use
-            const id = undefined;
-            ops.push({index: {_index: 'gosearchindex', _type: 'function'}});
+            const _id = post.uri;
+            ops.push({index: {_index: 'gosearchindex', _type: 'function', _id}});
             ops.push(post);
         });
         return new Promise((resolve) => {
@@ -113,15 +112,7 @@ const sequence = (f, list) => {
         });
     }, Promise.resolve([]));
 }
-/*
-.then( (files) => {
-                // This should maybe not be done here, as this
-                // should rather return a promise that has read files
-                // not inserted to index yet
-                // but as writted below, I get too many files open error
-                // if waiting
-                return indexTokenizedFiles(files);
-*/
+
 const documentsList = (f) => readDir('./links').then(files => {
     const allLinks = Promise.all(files.map(addBase('./links')).map(readJson));
     return allLinks.then(mergeObjects)
