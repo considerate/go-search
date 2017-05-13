@@ -78,7 +78,7 @@ const addBase = (base) => (file) => [base, file].join('/');
  * Put a tokenized file into the index
  */
 const indexTokenizedFiles = (files) => {
-    return Promise.all(Object.keys(files).map((filename) => {
+    return sequence((filename) => {
         const posts = files[filename]; // posts are the tokenized functions
         if(posts.length === 0) {
             return Promise.resolve();
@@ -99,7 +99,7 @@ const indexTokenizedFiles = (files) => {
                 resolve(response);
             });
         });
-    }));
+    }, Object.keys(files));
 };
 
 const sequence = (f, list) => {
