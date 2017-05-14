@@ -112,7 +112,6 @@ function fetchRepositories(url, options){
                 return reject(new Error('Invalid status code' + response.statusCode));
             }
             res = JSON.parse(body);
-            console.log("the parsed result: " + res);
             // Go to next batch of repositories
             let nextLink = parse(response.headers.link);
             if(nextLink.next){
@@ -143,7 +142,7 @@ function run(language){
 
     // extract the relevant info from repo object
     function getUrlMaps(repos) {
-        return repos.map(repo => [repo.id, repo.html_url, repo.watchers, repo.forks]);
+        return repos.map(repo => [repo.id, repo.html_url, repo.stargazers_count, repo.watchers, repo.forks]);
     }
 
     // Fetch all repositories recursively
@@ -173,8 +172,9 @@ function run(language){
 run(language).then((urlAssociations) => {
     const urlMaps = urlAssociations.reduce( (acc, tuple) => {
         acc[tuple[0]] = {url: tuple[1],
-                        watchers: tuple[2],
-                        forks: tuple[3]
+                        stars: tuple[2],
+                        watchers: tuple[3],
+                        forks: tuple[4]
                         };;
         return acc;
     }, {});

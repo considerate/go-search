@@ -36,6 +36,7 @@ function walkFiles(filepath, repo_info) {
             tokenizeFile(path).then(result => {
                 const withUrls = result.map(func => {
                     func.uri = fileuri + '#L'+func.line;
+                    func.stars = repo_info.stars;
                     func.watchers = repo_info.watchers;
                     func.forks = repo_info.forks;
                     return func;
