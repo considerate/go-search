@@ -172,13 +172,16 @@ function parseTokens(tokens) {
         result_info = getTypeInfo(result);
         return [tokens4, {
             object: receiver.toJS(),
-            object_info,
+            object_info_types: object_info.types,
+            object_info_total: object_info.total,
             name,
             name_parts: name_parts,
             parameters: parameters.toJS(),
-            parameters_info,
+            parameters_info_types: parameters_info.types,
+            parameters_info_total: parameters_info.total,
             result: result.toJS(),
-            result_info
+            result_info_types: result_info.types,
+            result_info_total: result_info.total,
         }];
     }
     catch (e) {
@@ -196,9 +199,11 @@ function parseTokens(tokens) {
             name,
             name_parts,
             parameters: parameters.toJS(),
-            parameters_info,
+            parameters_info_types: parameters_info.types,
+            parameters_info_total: parameters_info.total,
             result: result.toJS(),
-            result_info
+            result_info_types: result_info.types,
+            result_info_total: result_info.total,
         }];
     } catch (e) {
     }
@@ -214,13 +219,15 @@ function parseTokens(tokens) {
         result_info = getTypeInfo(result);
         return [tokens3, {
             parameters: parameters.toJS(),
-            parameters_info,
+            parameters_info_types: parameters_info.types,
+            parameters_info_total: parameters_info.total,
             result: result.toJS(),
-            result_info
+            result_info_types: result_info.types,
+            result_info_total: result_info.total,
         }];
     } catch (e) {
         // none of the above, interesting to see what it is!!!
-        // console.error(e);
+        console.error(e);
     }
 }
 
@@ -301,6 +308,7 @@ function getTypeInfo(arr) {
 function tokenizeStream(stream) {
     let tokens = [];
     let inMatch = false;
+    let linenumber = 0;
     return new Promise(function (resolve, reject) {
         const lineReader = createLineReader(stream);
         const signatures = [];
@@ -311,6 +319,7 @@ function tokenizeStream(stream) {
             resolve(signatures);
         });
         lineReader.on('line', function (line) {
+            linenumber += 1;
             // first make sure that we're not in a comment
             const commentIndex = line.search(matchers.lineComment);
             if(commentIndex != -1) {
@@ -344,6 +353,7 @@ function tokenizeStream(stream) {
                                 const result = parseTokens(List(tokens));
                                 if(result) {
                                     const parseTree = result[1];
+                                    parseTree.line = linenumber;
                                     signatures.push(parseTree);
                                 }
                             } catch (e) {
