@@ -48,6 +48,7 @@ app.get('/search', function(req, res) {
             object_info_types: 50,
         };
 
+
         const typeQueries = ['object_info_types', 'parameters_info_types', 'result_info_types'].filter(key => {
             return Boolean(signature[key]) && signature[key].length > 0;
         }).map(key => {
@@ -125,7 +126,16 @@ app.get('/search', function(req, res) {
                 from: 0,
                 size: PAGE_SIZE,
                 query: {
-                    bool,
+                    function_score: {
+                        query: {
+                            bool,
+                        },
+                        field_value_factor: {
+                            "field":    "stars",
+                            "modifier": "log1p",
+                            "factor":   1,
+                        }
+                    }
                 }
             }
         };
