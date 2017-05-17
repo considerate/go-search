@@ -40,7 +40,7 @@ app.get('/search', function(req, res) {
 
         const signature = json[0];
         if(signature.result_info) {
-            signature.result_info.types = signature.result_info.types.filter(({type}) => type !== 'void');
+            signature.result_info_types = signature.result_info_types.filter(({type}) => type !== 'void');
         }
         console.log(JSON.stringify(signature, null, 2));
 
