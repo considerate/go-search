@@ -14,7 +14,7 @@ const mkdirs = require('node-mkdirs');
 
 const language = 'go';
 const languageFile = '.go';
-const startURL = 'https://api.github.com/search/repositories?q=language:'+language+'&page=10';
+const startURL = 'https://api.github.com/search/repositories?q=language:'+language+'&page=30';
 // WARNING: github has i request limit. 10 per minute if unauthorized and 30 authorized. 
 // For this case there are 34 pages in total, so only fetching the three last for now
 const filesPath = 'files';
@@ -143,7 +143,7 @@ function run(language){
 
     // extract the relevant info from repo object
     function getUrlMaps(repos) {
-        return repos.map(repo => [repo.id, repo.html_url, repo.watchers, repo.forks]);
+        return repos.map(repo => [repo.id, repo.html_url, repo.watchers, repo.forks, repo.stargazers_count]);
     }
 
     // Fetch all repositories recursively
@@ -171,11 +171,12 @@ function run(language){
 }
 
 run(language).then((urlAssociations) => {
-    const urlMaps = urlAssociations.reduce( (acc, tuple) => {
+    const urlMaps = urlAssociations.reduce((acc, tuple) => {
         acc[tuple[0]] = {url: tuple[1],
-                        watchers: tuple[2],
-                        forks: tuple[3]
-                        };;
+            watchers: tuple[2],
+            forks: tuple[3],
+            stars: tuple[4],
+        };
         return acc;
     }, {});
 

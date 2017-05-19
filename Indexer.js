@@ -38,6 +38,7 @@ function walkFiles(filepath, repo_info) {
                     func.uri = fileuri + '#L'+func.line;
                     func.watchers = repo_info.watchers;
                     func.forks = repo_info.forks;
+                    func.stars = repo_info.stars;
                     return func;
                 });
                 documents[filename] = withUrls;

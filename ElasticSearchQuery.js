@@ -36,6 +36,7 @@ const doCreate = () => {
                             "object_info_types": {type: "nested"},
                             "result_info_types": {type: "nested"},
                             "parameters_info_types": {type: "nested"},
+                            "stars": {type: "integer"},
                         }
                     }
                 }

@@ -40,13 +40,14 @@ app.get('/search', function(req, res) {
 
         const signature = json[0];
         if(signature.result_info) {
-            signature.result_info.types = signature.result_info.types.filter(({type}) => type !== 'void');
+            signature.result_info_types = signature.result_info_types.filter(({type}) => type !== 'void');
         }
         console.log(JSON.stringify(signature, null, 2));
 
         const typeBoost = {
             object_info_types: 50,
         };
+
 
         const typeQueries = ['object_info_types', 'parameters_info_types', 'result_info_types'].filter(key => {
             return Boolean(signature[key]) && signature[key].length > 0;
@@ -125,7 +126,16 @@ app.get('/search', function(req, res) {
                 from: 0,
                 size: PAGE_SIZE,
                 query: {
-                    bool,
+                    function_score: {
+                        query: {
+                            bool,
+                        },
+                        field_value_factor: {
+                            "field":    "stars",
+                            "modifier": "log1p",
+                            "factor":   1,
+                        }
+                    }
                 }
             }
         };

@@ -1,6 +1,9 @@
+<!doctype html>
 <html>
     <head>
         <link rel="stylesheet" type="text/css" href="style.css">
+	<meta charset="utf8">
+	<title>Gopher Headlight</title>
     </head>
     <body>
         <img src="goheader.png" id="header" alt="gopher"/>
@@ -22,7 +25,7 @@
         </div>
 
         <div id="footer">
-            A project for DH2642<br>&copy; 2017
+            A project for DD2476<br>&copy; 2017
         </div>
         <script>
             var searchContent = ""; // last search string
@@ -47,12 +50,12 @@
                     }
                 };
                 //xhttp.open("GET", "http://search.considerate.se/?q=" + newSearch, true);
-                xhttp.open("GET", "http://localhost:3000/search?q=" + newSearch, true);
+                xhttp.open("GET", "/search?q=" + newSearch, true);
                 xhttp.send();
             }
 
             function getResultBlock(resultNo, name, objects, parameters, returns, link) {
-                string = "";
+                string = "func ";
                 if(objects.length > 0) {
                     string += "(";
                     for(var i = 0; i < objects.length; ++i) {
@@ -81,7 +84,7 @@
                     }
                     string += ") ";
                 }
-                return '<div><p>' + resultNo + '. ' + string + '</p><a href="' + link + '">' + link + '</a></div>';
+                return '<div><p>' + (resultNo + 1) + '. ' + string + '</p><a href="' + link + '">' + link + '</a></div>';
             }
 
             // sets the contents of the search results, if any query has been entered
